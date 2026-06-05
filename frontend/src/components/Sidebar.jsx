@@ -14,6 +14,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Zap,
+  LogOut,
 } from "lucide-react";
 
 const navItems = [
@@ -24,7 +25,7 @@ const navItems = [
   { id: "timetable", label: "Timetable", icon: CalendarClock },
 ];
 
-export default function Sidebar({ activeTab, onTabChange, profile }) {
+export default function Sidebar({ activeTab, onTabChange, profile, onLogout }) {
   const [collapsed, setCollapsed] = useState(false);
 
   const firstName = profile?.lastname?.split(" ")?.[0] || "Student";
@@ -121,16 +122,33 @@ export default function Sidebar({ activeTab, onTabChange, profile }) {
 
       {/* ─── Footer ────────────────────────────────────────────────── */}
       <div className="px-3 pb-4 space-y-1">
-        {!collapsed && profile && (
-          <div className="px-3 py-3 mb-2 rounded-xl" style={{ background: "rgba(99, 102, 241, 0.05)" }}>
-            <p className="text-xs font-medium text-[var(--color-text-primary)] truncate">
-              {firstName}
-            </p>
-            <p className="text-[10px] text-[var(--color-text-muted)] truncate">
-              Zetech Digital School
-            </p>
+        {!collapsed && profile ? (
+          <div className="px-3 py-3 mb-2 rounded-xl flex items-center justify-between gap-2" style={{ background: "rgba(99, 102, 241, 0.05)" }}>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-medium text-[var(--color-text-primary)] truncate">
+                {firstName}
+              </p>
+              <p className="text-[10px] text-[var(--color-text-muted)] truncate">
+                Zetech Digital School
+              </p>
+            </div>
+            <button
+              onClick={onLogout}
+              title="Logout"
+              className="flex-shrink-0 p-1.5 rounded-lg text-[var(--color-text-muted)] hover:text-[var(--color-accent-rose)] hover:bg-red-500/10 transition-all cursor-pointer"
+            >
+              <LogOut size={14} />
+            </button>
           </div>
-        )}
+        ) : collapsed && profile ? (
+          <button
+            onClick={onLogout}
+            title="Logout"
+            className="w-full flex items-center justify-center py-2.5 mb-2 rounded-xl text-[var(--color-text-muted)] hover:text-[var(--color-accent-rose)] hover:bg-red-500/10 transition-all cursor-pointer"
+          >
+            <LogOut size={16} />
+          </button>
+        ) : null}
         <button
           onClick={() => setCollapsed(!collapsed)}
           className="w-full flex items-center justify-center py-2 rounded-xl text-[var(--color-text-muted)] hover:text-[var(--color-primary-light)] transition-colors cursor-pointer"

@@ -1,30 +1,35 @@
 """
 SomaSync — Moodle Sync Bridge Router
-Handles all communication with the Zetech University Moodle REST API.
-Uses the server-stored token for all requests — no token exposure to frontend.
+All routes extract the user's token from the Authorization header.
+No credentials are stored server-side — each student authenticates individually.
 """
 
-from fastapi import APIRouter, HTTPException, Query
-from pydantic import BaseModel
+from fastapi import APIRouter, HTTPException, Header, Query
 import httpx
-from app.config import get_settings
+import time
+from datetime import datetime
 
 router = APIRouter(prefix="/api/moodle", tags=["Moodle Sync Bridge"])
 
-settings = get_settings()
-MOODLE_BASE = settings.moodle_base_url
-WS_TOKEN = settings.moodle_ws_token
-USER_ID = settings.moodle_user_id
+MOODLE_BASE = "https://elearning.zetech.ac.ke/webservice/rest/server.php"
 
 
-# ─── Internal Helpers ─────────────────────────────────────────────────────────
+# ─── Helpers ──────────────────────────────────────────────────────────────────
 
-async def _moodle_call(wsfunction: str, params: dict | None = None) -> dict | list:
-    """
-    Execute a Moodle Web Service call using server-stored token.
-    """
+def _extract_token(authorization: str) -> str:
+    """Extract token from 'Bearer <token>' header."""
+    if not authorization:
+        raise HTTPException(status_code=401, detail="Missing Authorization header")
+    parts = authorization.split(" ")
+    if len(parts) != 2 or parts[0].lower() != "bearer":
+        raise HTTPException(status_code=401, detail="Invalid Authorization format. Use: Bearer <token>")
+    return parts[1]
+
+
+async def _moodle_call(token: str, wsfunction: str, params: dict | None = None) -> dict | list:
+    """Execute a Moodle Web Service call using the user's token."""
     payload = {
-        "wstoken": WS_TOKEN,
+        "wstoken": token,
         "wsfunction": wsfunction,
         "moodlewsrestformat": "json",
     }
@@ -49,15 +54,18 @@ async def _moodle_call(wsfunction: str, params: dict | None = None) -> dict | li
     return data
 
 
+async def _get_userid(token: str) -> int:
+    """Get the user ID from the token via site info."""
+    data = await _moodle_call(token, "core_webservice_get_site_info")
+    return data.get("userid")
+
+
 # ─── Routes ───────────────────────────────────────────────────────────────────
 
 @router.get("/profile")
-async def get_profile():
-    """
-    Fetch the authenticated user's profile and site info.
-    Moodle Function: core_webservice_get_site_info
-    """
-    data = await _moodle_call("core_webservice_get_site_info")
+async def get_profile(authorization: str = Header(...)):
+    token = _extract_token(authorization)
+    data = await _moodle_call(token, "core_webservice_get_site_info")
     return {
         "status": "ok",
         "profile": {
@@ -69,21 +77,15 @@ async def get_profile():
             "sitename": data.get("sitename"),
             "siteurl": data.get("siteurl"),
             "userpictureurl": data.get("userpictureurl"),
-            "lang": data.get("lang"),
         },
     }
 
 
 @router.get("/my-courses")
-async def get_my_courses():
-    """
-    Fetch the authenticated user's enrolled courses.
-    Moodle Function: core_enrol_get_users_courses
-    """
-    data = await _moodle_call(
-        "core_enrol_get_users_courses",
-        {"userid": str(USER_ID)},
-    )
+async def get_my_courses(authorization: str = Header(...)):
+    token = _extract_token(authorization)
+    userid = await _get_userid(token)
+    data = await _moodle_call(token, "core_enrol_get_users_courses", {"userid": str(userid)})
     courses = []
     if isinstance(data, list):
         for c in data:
@@ -106,29 +108,25 @@ async def get_my_courses():
 
 
 @router.get("/assignments")
-async def get_assignments(course_ids: str = Query("", description="Comma-separated course IDs (optional)")):
-    """
-    Fetch assignments from enrolled courses.
-    Moodle Function: mod_assign_get_assignments
-    """
+async def get_assignments(
+    authorization: str = Header(...),
+    course_ids: str = Query("", description="Comma-separated course IDs"),
+):
+    token = _extract_token(authorization)
     params = {}
     if course_ids:
         for i, cid in enumerate(course_ids.split(",")):
             params[f"courseids[{i}]"] = cid.strip()
-
-    data = await _moodle_call("mod_assign_get_assignments", params)
+    data = await _moodle_call(token, "mod_assign_get_assignments", params)
     return {"status": "ok", "data": data}
 
 
 @router.get("/upcoming")
-async def get_upcoming_events():
-    """
-    Fetch upcoming action events (deadlines) sorted by time.
-    Moodle Function: core_calendar_get_action_events_by_timesort
-    """
-    import time
+async def get_upcoming_events(authorization: str = Header(...)):
+    token = _extract_token(authorization)
     now = int(time.time())
     data = await _moodle_call(
+        token,
         "core_calendar_get_action_events_by_timesort",
         {"timesortfrom": str(now), "limitnum": "20"},
     )
@@ -137,15 +135,11 @@ async def get_upcoming_events():
 
 
 @router.get("/calendar")
-async def get_calendar_events():
-    """
-    Fetch calendar events for the current month.
-    Moodle Function: core_calendar_get_calendar_monthly_view
-    """
-    import time
-    from datetime import datetime
+async def get_calendar_events(authorization: str = Header(...)):
+    token = _extract_token(authorization)
     now = datetime.now()
     data = await _moodle_call(
+        token,
         "core_calendar_get_calendar_monthly_view",
         {"year": str(now.year), "month": str(now.month)},
     )
@@ -153,65 +147,39 @@ async def get_calendar_events():
 
 
 @router.get("/grades")
-async def get_grades():
-    """
-    Fetch grade overview for all courses.
-    Moodle Function: gradereport_overview_get_course_grades
-    """
+async def get_grades(authorization: str = Header(...)):
+    token = _extract_token(authorization)
+    userid = await _get_userid(token)
     data = await _moodle_call(
+        token,
         "gradereport_overview_get_course_grades",
-        {"userid": str(USER_ID)},
+        {"userid": str(userid)},
     )
     return {"status": "ok", "data": data}
 
 
 @router.get("/course/{course_id}/contents")
-async def get_course_contents(course_id: int):
-    """
-    Fetch the content/sections of a specific course.
-    Moodle Function: core_course_get_contents
-    """
-    data = await _moodle_call(
-        "core_course_get_contents",
-        {"courseid": str(course_id)},
-    )
+async def get_course_contents(course_id: int, authorization: str = Header(...)):
+    token = _extract_token(authorization)
+    data = await _moodle_call(token, "core_course_get_contents", {"courseid": str(course_id)})
     return {"status": "ok", "sections": data}
 
 
-@router.get("/course/{course_id}/completion")
-async def get_course_completion(course_id: int):
-    """
-    Fetch the completion status for a course.
-    Moodle Function: core_completion_get_activities_completion_status
-    """
-    data = await _moodle_call(
-        "core_completion_get_activities_completion_status",
-        {"courseid": str(course_id), "userid": str(USER_ID)},
-    )
-    return {"status": "ok", "data": data}
-
-
 @router.get("/recent-courses")
-async def get_recent_courses():
-    """
-    Fetch recently accessed courses.
-    Moodle Function: core_course_get_recent_courses
-    """
-    data = await _moodle_call(
-        "core_course_get_recent_courses",
-        {"userid": str(USER_ID), "limit": "10"},
-    )
+async def get_recent_courses(authorization: str = Header(...)):
+    token = _extract_token(authorization)
+    userid = await _get_userid(token)
+    data = await _moodle_call(token, "core_course_get_recent_courses", {"userid": str(userid), "limit": "10"})
     return {"status": "ok", "courses": data}
 
 
 @router.get("/notifications")
-async def get_notifications():
-    """
-    Fetch popup notifications.
-    Moodle Function: message_popup_get_popup_notifications
-    """
+async def get_notifications(authorization: str = Header(...)):
+    token = _extract_token(authorization)
+    userid = await _get_userid(token)
     data = await _moodle_call(
+        token,
         "message_popup_get_popup_notifications",
-        {"useridto": str(USER_ID), "limit": "10"},
+        {"useridto": str(userid), "limit": "10"},
     )
     return {"status": "ok", "data": data}

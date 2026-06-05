@@ -1,44 +1,52 @@
 """
 SomaSync — Main FastAPI Application
-Entry point for the async backend server.
 """
 
 import os
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.config import get_settings
-from app.routers import moodle
-
-
-settings = get_settings()
+from app.routers import auth, moodle
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Application lifespan — startup and shutdown hooks."""
     print("[*] SomaSync backend starting up...")
-    print(f"   Environment: {settings.environment}")
-    print(f"   Moodle Endpoint: {settings.moodle_base_url}")
     yield
     print("[*] SomaSync backend shutting down...")
 
 
+class StripPrefixMiddleware:
+    def __init__(self, app, prefix: str):
+        self.app = app
+        self.prefix = prefix.rstrip("/")
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] in ("http", "websocket"):
+            path = scope.get("path", "")
+            if path.startswith(self.prefix):
+                scope["path"] = path[len(self.prefix):] or "/"
+                scope["root_path"] = self.prefix
+        await self.app(scope, receive, send)
+
+
 app = FastAPI(
     title="SomaSync API",
-    description="Elite Edutech backend — Moodle Sync, AI Pipelines, Gamified Workflows",
-    version="0.1.0",
+    description="Edutech backend — Moodle Auth, Sync, AI Pipelines",
+    version="0.2.0",
     lifespan=lifespan,
     docs_url="/docs",
     redoc_url="/redoc",
 )
 
+app.add_middleware(StripPrefixMiddleware, prefix="/_/backend")
+
 # ─── CORS ─────────────────────────────────────────────────────────────────────
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:5173",    # Vite dev server
-        "http://localhost:3000",    # Alt React dev server
+        "http://localhost:5173",
+        "http://localhost:3000",
         "http://127.0.0.1:5173",
     ],
     allow_credentials=True,
@@ -46,46 +54,22 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ─── Router Registration ─────────────────────────────────────────────────────
+# ─── Routers ──────────────────────────────────────────────────────────────────
+app.include_router(auth.router)
 app.include_router(moodle.router)
 
 
-# ─── Health Check ─────────────────────────────────────────────────────────────
 @app.get("/", tags=["System"])
 async def root():
-    return {
-        "service": "SomaSync API",
-        "status": "operational",
-        "version": "0.1.0",
-    }
+    return {"service": "SomaSync API", "status": "operational", "version": "0.2.0"}
 
 
 @app.get("/health", tags=["System"])
 async def health_check():
-    return {
-        "status": "healthy",
-        "environment": settings.environment,
-        "services": {
-            "moodle": {
-                "endpoint": settings.moodle_base_url,
-                "token_configured": bool(settings.moodle_ws_token),
-            },
-            "supabase": {
-                "url_configured": bool(settings.supabase_url),
-                "key_configured": bool(settings.supabase_key),
-            },
-            "gemini": {
-                "key_configured": bool(settings.gemini_api_key),
-            },
-            "azure_doc_intelligence": {
-                "endpoint_configured": bool(settings.azure_doc_intelligence_endpoint),
-            },
-        },
-    }
+    return {"status": "healthy", "auth": "moodle_token_flow"}
 
 
 if __name__ == "__main__":
     import uvicorn
-
     port = int(os.environ.get("PORT", 8000))
     uvicorn.run("main:app", host="0.0.0.0", port=port, reload=True)

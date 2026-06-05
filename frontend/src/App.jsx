@@ -7,6 +7,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import Sidebar from "./components/Sidebar";
 import Home from "./pages/Dashboard";
+import Login from "./pages/Login";
 import { useProfile, useMyCourses, useUpcomingEvents } from "./hooks/useMoodle";
 import "./App.css";
 
@@ -29,7 +30,7 @@ function PlaceholderPage({ title, description }) {
   );
 }
 
-export default function App() {
+function AuthenticatedApp({ onLogout }) {
   const [activeTab, setActiveTab] = useState("home");
 
   // ─── Live data hooks ────────────────────────────────────────────
@@ -79,7 +80,12 @@ export default function App() {
 
   return (
     <div className="flex min-h-screen" style={{ background: "var(--color-base-950)" }}>
-      <Sidebar activeTab={activeTab} onTabChange={setActiveTab} profile={profile} />
+      <Sidebar 
+        activeTab={activeTab} 
+        onTabChange={setActiveTab} 
+        profile={profile} 
+        onLogout={onLogout}
+      />
 
       <main
         className="flex-1 transition-all duration-300 ease-in-out"
@@ -100,4 +106,26 @@ export default function App() {
       </main>
     </div>
   );
+}
+
+export default function App() {
+  const [token, setToken] = useState(() => localStorage.getItem("somasync_token"));
+
+  const handleLoginSuccess = (newToken, profile) => {
+    localStorage.setItem("somasync_token", newToken);
+    localStorage.setItem("somasync_profile", JSON.stringify(profile));
+    setToken(newToken);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("somasync_token");
+    localStorage.removeItem("somasync_profile");
+    setToken(null);
+  };
+
+  if (!token) {
+    return <Login onLoginSuccess={handleLoginSuccess} />;
+  }
+
+  return <AuthenticatedApp onLogout={handleLogout} />;
 }
