@@ -8,6 +8,10 @@ import { motion } from "framer-motion";
 import Sidebar from "./components/Sidebar";
 import Home from "./pages/Dashboard";
 import Login from "./pages/Login";
+import MoodleSync from "./pages/MoodleSync";
+import GitVisualizer from "./components/GitVisualizer";
+import Flashcards from "./pages/Flashcards";
+import Timetable from "./pages/Timetable";
 import { useProfile, useMyCourses, useUpcomingEvents } from "./hooks/useMoodle";
 import "./App.css";
 
@@ -52,30 +56,10 @@ function AuthenticatedApp({ onLogout }) {
         loading={loading}
       />
     ),
-    moodle: (
-      <PlaceholderPage
-        title="Moodle Sync Bridge"
-        description="Deep sync with your Zetech Moodle courses, assignments, and grades."
-      />
-    ),
-    git: (
-      <PlaceholderPage
-        title="Git Visualizer"
-        description="Interactive commit tree mapping your code to syllabus milestones."
-      />
-    ),
-    flashcards: (
-      <PlaceholderPage
-        title="AI Flashcards"
-        description="Flashcards generated from your course materials using Gemini AI."
-      />
-    ),
-    timetable: (
-      <PlaceholderPage
-        title="Smart Timetable"
-        description="AI-optimized schedule combining Moodle calendar and study goals."
-      />
-    ),
+    moodle: <MoodleSync />,
+    git: <GitVisualizer />,
+    flashcards: <Flashcards />,
+    timetable: <Timetable />,
   };
 
   return (
