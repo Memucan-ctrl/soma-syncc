@@ -1,11 +1,13 @@
 /**
  * SomaSync — Chat Input Bar (v2 — Bottom Bar)
  * Full-width AI chat bar pinned at the bottom of the home page.
+ * Connected to Azure Document Intelligence for OCR and Google Gemini for AI responses.
  */
 
 import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, Sparkles, Bot, Loader2, X } from "lucide-react";
+import { Send, Sparkles, Bot, Loader2, X, Paperclip, FileText } from "lucide-react";
+import { sendConsultationQuery, uploadFileForOcr } from "../services/api";
 
 export default function ChatBar() {
   const [input, setInput] = useState("");
@@ -14,24 +16,73 @@ export default function ChatBar() {
   const [expanded, setExpanded] = useState(false);
   const inputRef = useRef(null);
 
-  const handleSend = () => {
-    if (!input.trim()) return;
+  // Azure OCR States
+  const fileInputRef = useRef(null);
+  const [attachedText, setAttachedText] = useState("");
+  const [attachedFileName, setAttachedFileName] = useState("");
+  const [uploadingOcr, setUploadingOcr] = useState(false);
 
-    const userMsg = { role: "user", content: input.trim(), ts: Date.now() };
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setUploadingOcr(true);
+    try {
+      const data = await uploadFileForOcr(file);
+      setAttachedText(data.text);
+      setAttachedFileName(file.name);
+      setExpanded(true);
+    } catch (err) {
+      console.error(err);
+      alert("Failed to analyze file with Azure Document Intelligence.");
+    } finally {
+      setUploadingOcr(false);
+      e.target.value = "";
+    }
+  };
+
+  const handleSend = async () => {
+    const query = input.trim();
+    if (!query && !attachedText) return;
+
+    const fullContent = attachedText
+      ? `${query}\n\n[Attached File OCR Contents (${attachedFileName})]:\n${attachedText}`
+      : query;
+
+    const userMsg = {
+      role: "user",
+      content: query || `Uploaded file: ${attachedFileName}`,
+      ts: Date.now(),
+    };
+
     setMessages((prev) => [...prev, userMsg]);
     setInput("");
     setIsTyping(true);
     setExpanded(true);
 
-    setTimeout(() => {
-      const aiMsg = {
-        role: "assistant",
-        content: `I'll help with "${userMsg.content.substring(0, 60)}". The Gemini 2.5 Flash pipeline will be connected soon — for now I'm in preview mode. Try asking about your courses or upcoming deadlines!`,
-        ts: Date.now(),
-      };
-      setMessages((prev) => [...prev, aiMsg]);
+    // Clear attached file immediately
+    setAttachedText("");
+    setAttachedFileName("");
+
+    try {
+      // Call real Gemini API
+      const data = await sendConsultationQuery(fullContent);
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: data.response, ts: Date.now() },
+      ]);
+    } catch (err) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content: "Sorry, I encountered an error. Please verify your connection details.",
+          ts: Date.now(),
+        },
+      ]);
+    } finally {
       setIsTyping(false);
-    }, 1000);
+    }
   };
 
   const handleKeyDown = (e) => {
@@ -52,7 +103,7 @@ export default function ChatBar() {
     >
       {/* ─── Expanded Messages ─────────────────────────────────────── */}
       <AnimatePresence>
-        {expanded && messages.length > 0 && (
+        {expanded && (messages.length > 0 || uploadingOcr || attachedFileName) && (
           <motion.div
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
@@ -73,6 +124,7 @@ export default function ChatBar() {
                 <X size={13} className="text-[var(--color-text-muted)]" />
               </button>
             </div>
+            
             <div className="px-5 pb-3 space-y-2 max-h-48 overflow-y-auto">
               {messages.map((msg, i) => (
                 <div
@@ -91,6 +143,12 @@ export default function ChatBar() {
                   </div>
                 </div>
               ))}
+              {uploadingOcr && (
+                <div className="flex items-center gap-2 text-[11px] text-[var(--color-text-muted)]">
+                  <Loader2 size={11} className="animate-spin text-[var(--color-primary)]" />
+                  Azure OCR analyzing attachment...
+                </div>
+              )}
               {isTyping && (
                 <div className="flex items-center gap-2 text-[11px] text-[var(--color-text-muted)]">
                   <Loader2 size={11} className="animate-spin text-[var(--color-primary)]" />
@@ -102,8 +160,44 @@ export default function ChatBar() {
         )}
       </AnimatePresence>
 
+      {/* ─── Attached File Banner ─────────────────────────────────── */}
+      {attachedFileName && (
+        <div className="px-5 py-2 bg-[rgba(99,102,241,0.04)] border-b border-[var(--color-border-subtle)] flex items-center justify-between text-[10px] font-semibold text-[var(--color-primary-light)]">
+          <span className="flex items-center gap-1">
+            <FileText size={11} />
+            OCR Document Synced: {attachedFileName}
+          </span>
+          <button
+            onClick={() => {
+              setAttachedText("");
+              setAttachedFileName("");
+            }}
+            className="text-[var(--color-accent-rose)] hover:underline cursor-pointer border-none bg-transparent"
+          >
+            Remove
+          </button>
+        </div>
+      )}
+
       {/* ─── Input Bar ─────────────────────────────────────────────── */}
       <div className="flex items-center gap-3 px-5 py-3">
+        {/* Hidden File Input */}
+        <input
+          type="file"
+          ref={fileInputRef}
+          onChange={handleFileChange}
+          accept="image/*,application/pdf"
+          style={{ display: "none" }}
+        />
+        <button
+          onClick={() => fileInputRef.current?.click()}
+          disabled={uploadingOcr || isTyping}
+          className="p-1.5 rounded-lg text-[var(--color-text-muted)] hover:text-white transition-colors cursor-pointer disabled:opacity-20"
+          title="Upload whiteboard picture or notes PDF"
+        >
+          <Paperclip size={15} />
+        </button>
+
         <Sparkles size={16} className="text-[var(--color-primary)] flex-shrink-0" />
         <input
           ref={inputRef}
@@ -120,10 +214,10 @@ export default function ChatBar() {
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           onClick={handleSend}
-          disabled={!input.trim()}
+          disabled={(!input.trim() && !attachedFileName) || uploadingOcr || isTyping}
           className="p-2.5 rounded-xl transition-all cursor-pointer disabled:opacity-25 disabled:cursor-not-allowed"
           style={{
-            background: input.trim() ? "linear-gradient(135deg, #6366F1, #818CF8)" : "rgba(99, 102, 241, 0.08)",
+            background: (input.trim() || attachedFileName) ? "linear-gradient(135deg, #6366F1, #818CF8)" : "rgba(99, 102, 241, 0.08)",
           }}
         >
           <Send size={14} className="text-white" />

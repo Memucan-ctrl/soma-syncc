@@ -107,3 +107,35 @@ export async function sendConsultationQuery(message, courseCode = "", context = 
     body: JSON.stringify({ message, course_code: courseCode, context }),
   });
 }
+
+export async function uploadFileForOcr(file) {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const token = localStorage.getItem("somasync_token");
+  const headers = {};
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  // We fetch directly because fetch needs to calculate the multipart boundary automatically (so no Content-Type header)
+  const res = await fetch(`${API_BASE}/ocr/upload`, {
+    method: "POST",
+    headers,
+    body: formData,
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail?.error || err.detail?.message || `OCR error ${res.status}`);
+  }
+
+  return await res.json();
+}
+
+export async function ocrMoodleFile(fileUrl, token) {
+  return apiFetch("/ocr/moodle-file", {
+    method: "POST",
+    body: JSON.stringify({ file_url: fileUrl, token }),
+  });
+}
