@@ -46,6 +46,14 @@ const flashcardData = {
   ]
 };
 
+const courseTitles = {
+  "DIT 124": "Database Systems",
+  "DCS 121": "Electronics",
+  "BSD 321": "User Centered Design",
+  "BDS 322": "Internet Programming II",
+  "General Study": "General Study Hacks"
+};
+
 export default function Flashcards() {
   const { data: coursesData } = useMyCourses();
   const courses = coursesData?.courses || [];
@@ -117,14 +125,11 @@ export default function Flashcards() {
             className="text-xs py-2 px-3 rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-base-900)] text-[var(--color-text-primary)] outline-none focus:border-[var(--color-primary)] cursor-pointer"
           >
             <option value="General Study">General Study Hacks</option>
-            {/* Map shortname matching */}
             {Object.keys(flashcardData).map(key => {
               if (key === "General Study") return null;
-              // Find full displayname
-              const matchedCourse = courses.find(c => c.shortname.includes(key));
               return (
                 <option key={key} value={key}>
-                  {matchedCourse ? matchedCourse.shortname.split("M26")?.[0] : key}
+                  {courseTitles[key] || key}
                 </option>
               );
             })}

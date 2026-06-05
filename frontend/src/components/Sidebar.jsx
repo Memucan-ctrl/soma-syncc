@@ -15,13 +15,14 @@ import {
   ChevronRight,
   Zap,
   LogOut,
+  BookOpen,
 } from "lucide-react";
 
 const navItems = [
   { id: "home", label: "Home", icon: LayoutDashboard },
-  { id: "moodle", label: "Moodle Sync", icon: RefreshCw },
+  { id: "moodle", label: "Asset Manager", icon: Layers },
   { id: "git", label: "Git Visualizer", icon: GitBranch },
-  { id: "flashcards", label: "Flashcards", icon: Layers },
+  { id: "flashcards", label: "Flashcards", icon: BookOpen },
   { id: "timetable", label: "Timetable", icon: CalendarClock },
 ];
 

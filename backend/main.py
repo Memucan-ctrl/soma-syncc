@@ -6,7 +6,7 @@ import os
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import auth, moodle
+from app.routers import auth, moodle, ai
 
 
 @asynccontextmanager
@@ -57,6 +57,7 @@ app.add_middleware(
 # ─── Routers ──────────────────────────────────────────────────────────────────
 app.include_router(auth.router)
 app.include_router(moodle.router)
+app.include_router(ai.router)
 
 
 @app.get("/", tags=["System"])

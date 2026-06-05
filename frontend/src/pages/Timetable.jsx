@@ -6,7 +6,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { CalendarDays, Clock, MapPin, Monitor, BookOpen, Users, Bookmark } from "lucide-react";
-import { useMyCourses } from "../hooks/useMoodle";
+import { useMyCourses, useUpcomingEvents } from "../hooks/useMoodle";
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
 
@@ -14,30 +14,34 @@ const typeIcons = {
   lecture: BookOpen,
   practical: Monitor,
   tutorial: Users,
+  event: CalendarDays,
 };
 
 const typeColors = {
   lecture: "rgba(99, 102, 241, 0.08)",
   practical: "rgba(34, 211, 238, 0.08)",
   tutorial: "rgba(52, 211, 153, 0.08)",
+  event: "rgba(251, 113, 133, 0.08)",
 };
 
 const textColors = {
   lecture: "var(--color-primary-light)",
   practical: "var(--color-accent-cyan)",
   tutorial: "var(--color-accent-emerald)",
+  event: "var(--color-accent-rose)",
 };
 
 export default function Timetable() {
-  const { data: coursesData, loading } = useMyCourses();
+  const { data: coursesData, loading: coursesLoading } = useMyCourses();
+  const { data: eventsData, loading: eventsLoading } = useUpcomingEvents();
   const courses = coursesData?.courses || [];
+  const events = eventsData?.events || [];
 
+  const loading = coursesLoading || eventsLoading;
   const [activeDay, setActiveDay] = useState("Monday");
 
-  // Dynamically generate a beautiful mock timetable based on the user's actual courses
+  // Dynamically generate weekly classes and merge real calendar events from Moodle
   const getTimetableForStudent = () => {
-    if (courses.length === 0) return {};
-
     const timetable = {
       Monday: [],
       Tuesday: [],
@@ -46,30 +50,51 @@ export default function Timetable() {
       Friday: [],
     };
 
-    // Distribute student's actual courses across the week to simulate a real timetable
-    courses.slice(0, 8).forEach((course, idx) => {
-      const displayCode = course.shortname.split("M26")?.[0] || course.shortname;
-      const cleanName = course.fullname.split(" MAY TO ")?.[0] || course.fullname;
+    if (courses.length > 0) {
+      // Distribute student's actual courses across the week to simulate a class timetable
+      courses.slice(0, 8).forEach((course, idx) => {
+        const displayCode = course.shortname.split("M26")?.[0] || course.shortname;
+        const cleanName = course.fullname.split(" MAY TO ")?.[0] || course.fullname;
 
-      if (idx === 0) {
-        timetable.Monday.push({ time: "08:30 - 10:30", code: displayCode, name: cleanName, room: "Ruiru Hall A", type: "lecture" });
-        timetable.Wednesday.push({ time: "14:00 - 16:00", code: displayCode, name: cleanName, room: "Lab 3B", type: "practical" });
-      } else if (idx === 1) {
-        timetable.Tuesday.push({ time: "10:30 - 12:30", code: displayCode, name: cleanName, room: "Room 102", type: "lecture" });
-        timetable.Thursday.push({ time: "14:00 - 16:00", code: displayCode, name: cleanName, room: "Room 102", type: "tutorial" });
-      } else if (idx === 2) {
-        timetable.Wednesday.push({ time: "08:30 - 10:30", code: displayCode, name: cleanName, room: "Lab 2A", type: "practical" });
-        timetable.Friday.push({ time: "10:30 - 12:30", code: displayCode, name: cleanName, room: "Ruiru Hall B", type: "lecture" });
-      } else if (idx === 3) {
-        timetable.Monday.push({ time: "11:00 - 13:00", code: displayCode, name: cleanName, room: "Room 204", type: "lecture" });
-      } else if (idx === 4) {
-        timetable.Thursday.push({ time: "08:30 - 10:30", code: displayCode, name: cleanName, room: "Lab 1A", type: "practical" });
-      } else if (idx === 5) {
-        timetable.Tuesday.push({ time: "14:00 - 16:00", code: displayCode, name: cleanName, room: "Ruiru Hall C", type: "lecture" });
-      } else if (idx === 6) {
-        timetable.Friday.push({ time: "14:00 - 15:30", code: displayCode, name: cleanName, room: "Room 305", type: "tutorial" });
-      } else if (idx === 7) {
-        timetable.Wednesday.push({ time: "11:00 - 13:00", code: displayCode, name: cleanName, room: "Room 108", type: "lecture" });
+        if (idx === 0) {
+          timetable.Monday.push({ time: "08:30 - 10:30", code: displayCode, name: cleanName, room: "Ruiru Hall A", type: "lecture" });
+          timetable.Wednesday.push({ time: "14:00 - 16:00", code: displayCode, name: cleanName, room: "Lab 3B", type: "practical" });
+        } else if (idx === 1) {
+          timetable.Tuesday.push({ time: "10:30 - 12:30", code: displayCode, name: cleanName, room: "Room 102", type: "lecture" });
+          timetable.Thursday.push({ time: "14:00 - 16:00", code: displayCode, name: cleanName, room: "Room 102", type: "tutorial" });
+        } else if (idx === 2) {
+          timetable.Wednesday.push({ time: "08:30 - 10:30", code: displayCode, name: cleanName, room: "Lab 2A", type: "practical" });
+          timetable.Friday.push({ time: "10:30 - 12:30", code: displayCode, name: cleanName, room: "Ruiru Hall B", type: "lecture" });
+        } else if (idx === 3) {
+          timetable.Monday.push({ time: "11:00 - 13:00", code: displayCode, name: cleanName, room: "Room 204", type: "lecture" });
+        } else if (idx === 4) {
+          timetable.Thursday.push({ time: "08:30 - 10:30", code: displayCode, name: cleanName, room: "Lab 1A", type: "practical" });
+        } else if (idx === 5) {
+          timetable.Tuesday.push({ time: "14:00 - 16:00", code: displayCode, name: cleanName, room: "Ruiru Hall C", type: "lecture" });
+        } else if (idx === 6) {
+          timetable.Friday.push({ time: "14:00 - 15:30", code: displayCode, name: cleanName, room: "Room 305", type: "tutorial" });
+        } else if (idx === 7) {
+          timetable.Wednesday.push({ time: "11:00 - 13:00", code: displayCode, name: cleanName, room: "Room 108", type: "lecture" });
+        }
+      });
+    }
+
+    // Merge actual Moodle calendar deadlines
+    events.forEach((event) => {
+      if (!event.timestart) return;
+      const date = new Date(event.timestart * 1000);
+      const dayName = date.toLocaleDateString("en-US", { weekday: "long" });
+
+      if (timetable[dayName]) {
+        const timeStr = date.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
+        const courseCode = event.course?.shortname?.split("M26")?.[0] || "LMS";
+        timetable[dayName].push({
+          time: timeStr,
+          code: courseCode,
+          name: event.name,
+          room: "Zetech E-Learning",
+          type: "event",
+        });
       }
     });
 

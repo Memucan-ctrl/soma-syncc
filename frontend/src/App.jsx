@@ -8,7 +8,7 @@ import { motion } from "framer-motion";
 import Sidebar from "./components/Sidebar";
 import Home from "./pages/Dashboard";
 import Login from "./pages/Login";
-import MoodleSync from "./pages/MoodleSync";
+import AssetManager from "./pages/AssetManager";
 import GitVisualizer from "./components/GitVisualizer";
 import Flashcards from "./pages/Flashcards";
 import Timetable from "./pages/Timetable";
@@ -56,7 +56,7 @@ function AuthenticatedApp({ onLogout }) {
         loading={loading}
       />
     ),
-    moodle: <MoodleSync />,
+    moodle: <AssetManager />,
     git: <GitVisualizer />,
     flashcards: <Flashcards />,
     timetable: <Timetable />,

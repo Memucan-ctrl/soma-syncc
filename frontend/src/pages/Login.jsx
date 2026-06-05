@@ -161,7 +161,7 @@ export default function Login({ onLoginSuccess }) {
                       type="text"
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
-                      placeholder="e.g. bse-01-0114/2025"
+                      placeholder="e.g. BSCIT-01-0001/2026"
                       disabled={loading}
                       className="w-full text-sm py-3 pl-11 pr-4 rounded-xl border transition-all"
                       style={{
