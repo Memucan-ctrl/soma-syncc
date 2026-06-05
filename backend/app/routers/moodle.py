@@ -1,7 +1,7 @@
 """
 SomaSync — Moodle Sync Bridge Router
 Handles all communication with the Zetech University Moodle REST API.
-Provides endpoints for fetching courses, assignments, calendar events, and grades.
+Uses the server-stored token for all requests — no token exposure to frontend.
 """
 
 from fastapi import APIRouter, HTTPException, Query
@@ -12,32 +12,19 @@ from app.config import get_settings
 router = APIRouter(prefix="/api/moodle", tags=["Moodle Sync Bridge"])
 
 settings = get_settings()
-
 MOODLE_BASE = settings.moodle_base_url
-
-
-# ─── Schemas ──────────────────────────────────────────────────────────────────
-
-class MoodleTokenPayload(BaseModel):
-    wstoken: str
-
-
-class MoodleSyncResponse(BaseModel):
-    status: str
-    function: str
-    data: list | dict
-    record_count: int | None = None
+WS_TOKEN = settings.moodle_ws_token
+USER_ID = settings.moodle_user_id
 
 
 # ─── Internal Helpers ─────────────────────────────────────────────────────────
 
-async def _moodle_call(wstoken: str, wsfunction: str, params: dict | None = None) -> dict | list:
+async def _moodle_call(wsfunction: str, params: dict | None = None) -> dict | list:
     """
-    Execute a Moodle Web Service call.
-    Uses httpx async client for non-blocking IO.
+    Execute a Moodle Web Service call using server-stored token.
     """
     payload = {
-        "wstoken": wstoken,
+        "wstoken": WS_TOKEN,
         "wsfunction": wsfunction,
         "moodlewsrestformat": "json",
     }
@@ -49,7 +36,6 @@ async def _moodle_call(wstoken: str, wsfunction: str, params: dict | None = None
         response.raise_for_status()
         data = response.json()
 
-    # Moodle returns errors as JSON objects with 'exception' key
     if isinstance(data, dict) and "exception" in data:
         raise HTTPException(
             status_code=502,
@@ -65,26 +51,62 @@ async def _moodle_call(wstoken: str, wsfunction: str, params: dict | None = None
 
 # ─── Routes ───────────────────────────────────────────────────────────────────
 
-@router.get("/courses", response_model=MoodleSyncResponse)
-async def get_courses(wstoken: str = Query(..., description="Moodle Web Service token")):
+@router.get("/profile")
+async def get_profile():
     """
-    Fetch all courses visible to the authenticated user.
-    Moodle Function: core_course_get_courses
+    Fetch the authenticated user's profile and site info.
+    Moodle Function: core_webservice_get_site_info
     """
-    data = await _moodle_call(wstoken, "core_course_get_courses")
-    return MoodleSyncResponse(
-        status="synced",
-        function="core_course_get_courses",
-        data=data,
-        record_count=len(data) if isinstance(data, list) else 1,
+    data = await _moodle_call("core_webservice_get_site_info")
+    return {
+        "status": "ok",
+        "profile": {
+            "userid": data.get("userid"),
+            "username": data.get("username"),
+            "firstname": data.get("firstname"),
+            "lastname": data.get("lastname"),
+            "fullname": data.get("fullname"),
+            "sitename": data.get("sitename"),
+            "siteurl": data.get("siteurl"),
+            "userpictureurl": data.get("userpictureurl"),
+            "lang": data.get("lang"),
+        },
+    }
+
+
+@router.get("/my-courses")
+async def get_my_courses():
+    """
+    Fetch the authenticated user's enrolled courses.
+    Moodle Function: core_enrol_get_users_courses
+    """
+    data = await _moodle_call(
+        "core_enrol_get_users_courses",
+        {"userid": str(USER_ID)},
     )
+    courses = []
+    if isinstance(data, list):
+        for c in data:
+            courses.append({
+                "id": c.get("id"),
+                "shortname": c.get("shortname"),
+                "fullname": c.get("fullname"),
+                "displayname": c.get("displayname"),
+                "categoryid": c.get("category"),
+                "progress": c.get("progress"),
+                "completed": c.get("completed"),
+                "hidden": c.get("hidden"),
+                "startdate": c.get("startdate"),
+                "enddate": c.get("enddate"),
+                "lastaccess": c.get("lastaccess"),
+                "isfavourite": c.get("isfavourite"),
+                "overviewfiles": c.get("overviewfiles", []),
+            })
+    return {"status": "ok", "courses": courses, "count": len(courses)}
 
 
-@router.get("/assignments", response_model=MoodleSyncResponse)
-async def get_assignments(
-    wstoken: str = Query(..., description="Moodle Web Service token"),
-    course_ids: str = Query("", description="Comma-separated course IDs (optional)"),
-):
+@router.get("/assignments")
+async def get_assignments(course_ids: str = Query("", description="Comma-separated course IDs (optional)")):
     """
     Fetch assignments from enrolled courses.
     Moodle Function: mod_assign_get_assignments
@@ -94,65 +116,102 @@ async def get_assignments(
         for i, cid in enumerate(course_ids.split(",")):
             params[f"courseids[{i}]"] = cid.strip()
 
-    data = await _moodle_call(wstoken, "mod_assign_get_assignments", params)
-    courses = data.get("courses", []) if isinstance(data, dict) else data
-    return MoodleSyncResponse(
-        status="synced",
-        function="mod_assign_get_assignments",
-        data=data,
-        record_count=len(courses),
+    data = await _moodle_call("mod_assign_get_assignments", params)
+    return {"status": "ok", "data": data}
+
+
+@router.get("/upcoming")
+async def get_upcoming_events():
+    """
+    Fetch upcoming action events (deadlines) sorted by time.
+    Moodle Function: core_calendar_get_action_events_by_timesort
+    """
+    import time
+    now = int(time.time())
+    data = await _moodle_call(
+        "core_calendar_get_action_events_by_timesort",
+        {"timesortfrom": str(now), "limitnum": "20"},
     )
+    events = data.get("events", []) if isinstance(data, dict) else []
+    return {"status": "ok", "events": events, "count": len(events)}
 
 
-@router.get("/calendar", response_model=MoodleSyncResponse)
-async def get_calendar_events(
-    wstoken: str = Query(..., description="Moodle Web Service token"),
-):
+@router.get("/calendar")
+async def get_calendar_events():
     """
-    Fetch upcoming calendar events for the user.
-    Moodle Function: core_calendar_get_calendar_events
+    Fetch calendar events for the current month.
+    Moodle Function: core_calendar_get_calendar_monthly_view
     """
-    params = {"events[eventids][0]": "0", "options[userevents]": "1", "options[siteevents]": "1"}
-    data = await _moodle_call(wstoken, "core_calendar_get_calendar_events", params)
-    events = data.get("events", []) if isinstance(data, dict) else data
-    return MoodleSyncResponse(
-        status="synced",
-        function="core_calendar_get_calendar_events",
-        data=data,
-        record_count=len(events),
+    import time
+    from datetime import datetime
+    now = datetime.now()
+    data = await _moodle_call(
+        "core_calendar_get_calendar_monthly_view",
+        {"year": str(now.year), "month": str(now.month)},
     )
+    return {"status": "ok", "data": data}
 
 
-@router.get("/grades", response_model=MoodleSyncResponse)
-async def get_grades(
-    wstoken: str = Query(..., description="Moodle Web Service token"),
-    course_id: int = Query(..., description="Moodle Course ID"),
-    user_id: int = Query(..., description="Moodle User ID"),
-):
+@router.get("/grades")
+async def get_grades():
     """
-    Fetch grade overview for a specific course.
+    Fetch grade overview for all courses.
     Moodle Function: gradereport_overview_get_course_grades
     """
-    params = {"courseid": str(course_id), "userid": str(user_id)}
-    data = await _moodle_call(wstoken, "gradereport_overview_get_course_grades", params)
-    return MoodleSyncResponse(
-        status="synced",
-        function="gradereport_overview_get_course_grades",
-        data=data,
+    data = await _moodle_call(
+        "gradereport_overview_get_course_grades",
+        {"userid": str(USER_ID)},
     )
+    return {"status": "ok", "data": data}
 
 
-@router.post("/test-connection")
-async def test_moodle_connection(payload: MoodleTokenPayload):
+@router.get("/course/{course_id}/contents")
+async def get_course_contents(course_id: int):
     """
-    Test connectivity to the Moodle API using a provided token.
-    Returns the first 3 courses as a proof of life.
+    Fetch the content/sections of a specific course.
+    Moodle Function: core_course_get_contents
     """
-    data = await _moodle_call(payload.wstoken, "core_course_get_courses")
-    preview = data[:3] if isinstance(data, list) else data
-    return {
-        "status": "connected",
-        "moodle_endpoint": MOODLE_BASE,
-        "courses_found": len(data) if isinstance(data, list) else 1,
-        "preview": preview,
-    }
+    data = await _moodle_call(
+        "core_course_get_contents",
+        {"courseid": str(course_id)},
+    )
+    return {"status": "ok", "sections": data}
+
+
+@router.get("/course/{course_id}/completion")
+async def get_course_completion(course_id: int):
+    """
+    Fetch the completion status for a course.
+    Moodle Function: core_completion_get_activities_completion_status
+    """
+    data = await _moodle_call(
+        "core_completion_get_activities_completion_status",
+        {"courseid": str(course_id), "userid": str(USER_ID)},
+    )
+    return {"status": "ok", "data": data}
+
+
+@router.get("/recent-courses")
+async def get_recent_courses():
+    """
+    Fetch recently accessed courses.
+    Moodle Function: core_course_get_recent_courses
+    """
+    data = await _moodle_call(
+        "core_course_get_recent_courses",
+        {"userid": str(USER_ID), "limit": "10"},
+    )
+    return {"status": "ok", "courses": data}
+
+
+@router.get("/notifications")
+async def get_notifications():
+    """
+    Fetch popup notifications.
+    Moodle Function: message_popup_get_popup_notifications
+    """
+    data = await _moodle_call(
+        "message_popup_get_popup_notifications",
+        {"useridto": str(USER_ID), "limit": "10"},
+    )
+    return {"status": "ok", "data": data}

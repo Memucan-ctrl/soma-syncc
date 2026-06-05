@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     # Moodle
     moodle_base_url: str = "https://elearning.zetech.ac.ke/webservice/rest/server.php"
     moodle_ws_token: str = ""
+    moodle_user_id: int = 42920
 
     # Gemini AI
     gemini_api_key: str = ""

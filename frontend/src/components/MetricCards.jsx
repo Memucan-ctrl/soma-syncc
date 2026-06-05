@@ -1,109 +1,107 @@
 /**
- * SomaSync — Metric Cards Row
- * Top-level quick stats: Next Deadline, Git Streak, Study Hours, GPA.
+ * SomaSync — Metric Cards (v2 — Live Data)
+ * Top row: Enrolled Courses, Upcoming Deadlines, Study Progress, Notifications
  */
 
 import { motion } from "framer-motion";
-import { Clock, GitCommitHorizontal, BookOpen, TrendingUp } from "lucide-react";
-import { mockDashboardMetrics } from "../data/mockData";
+import { BookOpen, CalendarClock, TrendingUp, Bell } from "lucide-react";
 
-const metrics = mockDashboardMetrics;
-
-function formatTimeLeft(dateStr) {
-  const diff = new Date(dateStr) - new Date();
-  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-  const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
-  if (days > 0) return `${days}d ${hours}h`;
-  return `${hours}h`;
+function Skeleton({ className }) {
+  return <div className={`skeleton ${className}`} />;
 }
 
-const cards = [
-  {
-    icon: Clock,
-    label: "Next Deadline",
-    value: formatTimeLeft(metrics.nextDeadline.due),
-    sub: `${metrics.nextDeadline.title} · ${metrics.nextDeadline.course}`,
-    accent: "#FB7185",
-    bgAccent: "rgba(251, 113, 133, 0.08)",
-  },
-  {
-    icon: GitCommitHorizontal,
-    label: "Git Streak",
-    value: `${metrics.gitStreak.currentStreak} days`,
-    sub: `${metrics.gitStreak.thisWeek} commits this week · ${metrics.gitStreak.totalCommits} total`,
-    accent: "#22D3EE",
-    bgAccent: "rgba(34, 211, 238, 0.08)",
-  },
-  {
-    icon: BookOpen,
-    label: "Study Hours",
-    value: `${metrics.studyHours.today}h today`,
-    sub: `${metrics.studyHours.thisWeek}h / ${metrics.studyHours.target}h weekly target`,
-    accent: "#A78BFA",
-    bgAccent: "rgba(167, 139, 250, 0.08)",
-  },
-  {
-    icon: TrendingUp,
-    label: "Current GPA",
-    value: metrics.gpa.current.toFixed(2),
-    sub: `${metrics.gpa.trend === "up" ? "↑" : "↓"} ${metrics.gpa.change} from last semester`,
-    accent: "#34D399",
-    bgAccent: "rgba(52, 211, 153, 0.08)",
-  },
-];
+export default function MetricCards({ courses, events, loading }) {
+  const courseCount = courses?.length || 0;
+  const activeCourses = courses?.filter((c) => !c.hidden && !c.completed)?.length || 0;
+  const eventCount = events?.length || 0;
+  const nextEvent = events?.[0];
 
-const containerVariants = {
-  hidden: {},
-  visible: {
-    transition: { staggerChildren: 0.08 },
-  },
-};
+  const avgProgress = courses?.length
+    ? Math.round(
+        courses.reduce((sum, c) => sum + (c.progress || 0), 0) / courses.length
+      )
+    : 0;
 
-const cardVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.4, 0, 0.2, 1] } },
-};
+  const nextDeadlineText = nextEvent
+    ? (() => {
+        const diff = (nextEvent.timesort * 1000 - Date.now()) / 1000;
+        const days = Math.floor(diff / 86400);
+        const hours = Math.floor((diff % 86400) / 3600);
+        if (days > 0) return `${days}d ${hours}h`;
+        if (hours > 0) return `${hours}h`;
+        return "Soon";
+      })()
+    : "—";
 
-export default function MetricCards() {
+  const cards = [
+    {
+      icon: BookOpen,
+      label: "Enrolled Courses",
+      value: loading ? null : `${activeCourses}`,
+      sub: loading ? null : `${courseCount} total · ${courses?.filter((c) => c.completed)?.length || 0} completed`,
+      accent: "#6366F1",
+      bgAccent: "rgba(99, 102, 241, 0.1)",
+    },
+    {
+      icon: CalendarClock,
+      label: "Next Deadline",
+      value: loading ? null : nextDeadlineText,
+      sub: loading ? null : (nextEvent?.name?.substring(0, 45) || "No upcoming events"),
+      accent: "#FB7185",
+      bgAccent: "rgba(251, 113, 133, 0.1)",
+    },
+    {
+      icon: TrendingUp,
+      label: "Avg. Progress",
+      value: loading ? null : `${avgProgress}%`,
+      sub: loading ? null : "Across all enrolled courses",
+      accent: "#34D399",
+      bgAccent: "rgba(52, 211, 153, 0.1)",
+    },
+    {
+      icon: Bell,
+      label: "Due Events",
+      value: loading ? null : `${eventCount}`,
+      sub: loading ? null : "Upcoming deadlines & tasks",
+      accent: "#FBBF24",
+      bgAccent: "rgba(251, 191, 36, 0.1)",
+    },
+  ];
+
   return (
-    <motion.div
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
-    >
-      {cards.map((card) => {
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {cards.map((card, i) => {
         const Icon = card.icon;
         return (
           <motion.div
             key={card.label}
-            variants={cardVariants}
-            whileHover={{ y: -4, transition: { duration: 0.2 } }}
-            className="glass-card glow-border p-5 cursor-default"
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.06, duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+            className="metric-card"
           >
-            <div className="flex items-start justify-between mb-3">
-              <div
-                className="p-2 rounded-lg"
-                style={{ background: card.bgAccent }}
-              >
-                <Icon size={18} style={{ color: card.accent }} />
+            <div className="flex items-center gap-3 mb-3">
+              <div className="p-2 rounded-lg" style={{ background: card.bgAccent }}>
+                <Icon size={16} style={{ color: card.accent }} />
               </div>
-              <span
-                className="text-[10px] font-semibold tracking-wider uppercase"
-                style={{ color: card.accent }}
-              >
+              <span className="text-[11px] font-medium text-[var(--color-text-muted)] uppercase tracking-wider">
                 {card.label}
               </span>
             </div>
-            <p className="text-2xl font-bold text-slate-50 mb-1">
-              {card.value}
-            </p>
-            <p className="text-xs text-slate-400 leading-relaxed">
-              {card.sub}
-            </p>
+            {loading ? (
+              <>
+                <Skeleton className="h-7 w-20 mb-2" />
+                <Skeleton className="h-3 w-36" />
+              </>
+            ) : (
+              <>
+                <p className="text-2xl font-bold text-[var(--color-text-primary)] mb-1">{card.value}</p>
+                <p className="text-xs text-[var(--color-text-secondary)] leading-relaxed truncate">{card.sub}</p>
+              </>
+            )}
           </motion.div>
         );
       })}
-    </motion.div>
+    </div>
   );
 }

@@ -1,6 +1,5 @@
 /**
- * SomaSync — Sidebar Navigation Component
- * Full-height left sidebar with branding, connection status, and nav links.
+ * SomaSync — Sidebar Navigation (v2 — Premium Design)
  */
 
 import { useState } from "react";
@@ -18,108 +17,91 @@ import {
 } from "lucide-react";
 
 const navItems = [
-  { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { id: "moodle", label: "Moodle Sync Bridge", icon: RefreshCw },
-  { id: "git", label: "Git Workflow Visualizer", icon: GitBranch },
+  { id: "home", label: "Home", icon: LayoutDashboard },
+  { id: "moodle", label: "Moodle Sync", icon: RefreshCw },
+  { id: "git", label: "Git Visualizer", icon: GitBranch },
   { id: "flashcards", label: "Flashcards", icon: Layers },
-  { id: "timetable", label: "Smart Timetable", icon: CalendarClock },
+  { id: "timetable", label: "Timetable", icon: CalendarClock },
 ];
 
-export default function Sidebar({ activeTab, onTabChange }) {
+export default function Sidebar({ activeTab, onTabChange, profile }) {
   const [collapsed, setCollapsed] = useState(false);
+
+  const firstName = profile?.lastname?.split(" ")?.[0] || "Student";
 
   return (
     <motion.aside
-      animate={{ width: collapsed ? 72 : 260 }}
-      transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+      animate={{ width: collapsed ? 68 : 240 }}
+      transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
       className="fixed left-0 top-0 h-screen z-50 flex flex-col"
       style={{
-        background: "linear-gradient(180deg, #0E1425 0%, #0B0F19 100%)",
-        borderRight: "1px solid rgba(34, 211, 238, 0.08)",
+        background: "var(--color-base-900)",
+        borderRight: "1px solid var(--color-border-subtle)",
       }}
     >
-      {/* ─── Logo ──────────────────────────────────────────────────────── */}
-      <div className="flex items-center gap-3 px-5 py-6 min-h-[80px]">
-        <motion.div
-          whileHover={{ rotate: 180 }}
-          transition={{ duration: 0.6 }}
-          className="flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center"
-          style={{
-            background: "linear-gradient(135deg, #22D3EE, #3B82F6)",
-          }}
+      {/* ─── Logo ──────────────────────────────────────────────────── */}
+      <div className="flex items-center gap-3 px-4 py-5 min-h-[68px]">
+        <div
+          className="flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center"
+          style={{ background: "linear-gradient(135deg, #6366F1, #818CF8)" }}
         >
-          <Zap size={20} className="text-white" />
-        </motion.div>
+          <Zap size={18} className="text-white" />
+        </div>
         <AnimatePresence>
           {!collapsed && (
             <motion.div
-              initial={{ opacity: 0, x: -10 }}
+              initial={{ opacity: 0, x: -8 }}
               animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -10 }}
-              transition={{ duration: 0.2 }}
+              exit={{ opacity: 0, x: -8 }}
+              transition={{ duration: 0.15 }}
             >
-              <h1 className="text-lg font-bold tracking-tight">
-                <span className="text-cyan-400">Soma</span>
-                <span className="text-slate-100">Sync</span>
-                <span className="text-slate-500 text-xs font-normal">.tech</span>
+              <h1 className="text-base font-bold tracking-tight text-[var(--color-text-primary)]">
+                SomaSync
               </h1>
             </motion.div>
           )}
         </AnimatePresence>
       </div>
 
-      {/* ─── Connection Badge ──────────────────────────────────────────── */}
+      {/* ─── Status ────────────────────────────────────────────────── */}
       <AnimatePresence>
         {!collapsed && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            className="px-5 mb-4"
+            className="px-4 mb-5"
           >
             <div
               className="status-badge"
               style={{
-                background: "rgba(52, 211, 153, 0.1)",
-                border: "1px solid rgba(52, 211, 153, 0.2)",
-                color: "#34D399",
+                background: "rgba(52, 211, 153, 0.08)",
+                border: "1px solid rgba(52, 211, 153, 0.15)",
+                color: "var(--color-accent-emerald)",
               }}
             >
-              <span className="pulse-dot" />
-              MOODLE CONNECTED
+              <span
+                className="pulse-dot"
+                style={{ background: "var(--color-accent-emerald)", boxShadow: "0 0 6px var(--color-accent-emerald)" }}
+              />
+              Live · Zetech Moodle
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* ─── Navigation ────────────────────────────────────────────────── */}
-      <nav className="flex-1 px-3 space-y-1">
+      {/* ─── Nav ───────────────────────────────────────────────────── */}
+      <nav className="flex-1 px-3 space-y-0.5">
         {navItems.map((item) => {
           const isActive = activeTab === item.id;
           const Icon = item.icon;
-
           return (
-            <motion.button
+            <button
               key={item.id}
               onClick={() => onTabChange(item.id)}
-              whileHover={{ x: 4 }}
-              whileTap={{ scale: 0.97 }}
-              className={`
-                w-full flex items-center gap-3 px-3 py-2.5 rounded-xl
-                text-sm font-medium transition-colors duration-200 cursor-pointer
-                ${isActive
-                  ? "text-cyan-400"
-                  : "text-slate-400 hover:text-slate-200"
-                }
-              `}
-              style={isActive ? {
-                background: "rgba(34, 211, 238, 0.08)",
-                borderLeft: "2px solid #22D3EE",
-              } : {
-                borderLeft: "2px solid transparent",
-              }}
+              className={`nav-item ${isActive ? "nav-item-active" : ""}`}
             >
-              <Icon size={18} strokeWidth={isActive ? 2.5 : 1.5} />
+              <Icon size={17} strokeWidth={isActive ? 2.2 : 1.5} />
               <AnimatePresence>
                 {!collapsed && (
                   <motion.span
@@ -132,37 +114,28 @@ export default function Sidebar({ activeTab, onTabChange }) {
                   </motion.span>
                 )}
               </AnimatePresence>
-            </motion.button>
+            </button>
           );
         })}
       </nav>
 
-      {/* ─── Footer ────────────────────────────────────────────────────── */}
-      <div className="px-3 pb-4 space-y-2">
-        <motion.button
-          whileHover={{ x: 4 }}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-slate-500 hover:text-slate-300 transition-colors cursor-pointer"
-        >
-          <Settings size={18} strokeWidth={1.5} />
-          <AnimatePresence>
-            {!collapsed && (
-              <motion.span
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-              >
-                Settings
-              </motion.span>
-            )}
-          </AnimatePresence>
-        </motion.button>
-
+      {/* ─── Footer ────────────────────────────────────────────────── */}
+      <div className="px-3 pb-4 space-y-1">
+        {!collapsed && profile && (
+          <div className="px-3 py-3 mb-2 rounded-xl" style={{ background: "rgba(99, 102, 241, 0.05)" }}>
+            <p className="text-xs font-medium text-[var(--color-text-primary)] truncate">
+              {firstName}
+            </p>
+            <p className="text-[10px] text-[var(--color-text-muted)] truncate">
+              Zetech Digital School
+            </p>
+          </div>
+        )}
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="w-full flex items-center justify-center py-2 rounded-xl text-slate-600 hover:text-cyan-400 transition-colors cursor-pointer"
-          style={{ background: "rgba(34, 211, 238, 0.04)" }}
+          className="w-full flex items-center justify-center py-2 rounded-xl text-[var(--color-text-muted)] hover:text-[var(--color-primary-light)] transition-colors cursor-pointer"
         >
-          {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+          {collapsed ? <ChevronRight size={15} /> : <ChevronLeft size={15} />}
         </button>
       </div>
     </motion.aside>

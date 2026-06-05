@@ -1,68 +1,55 @@
 /**
- * SomaSync — Dashboard Page
- * Main dashboard layout combining MetricCards, CourseRoster, ChatWorkspace, and GitVisualizer.
+ * SomaSync — Home Page (formerly Dashboard)
+ * Layout: Greeting → Metric Cards (top) → Courses + Events (middle) → Chat (bottom)
  */
 
 import { motion } from "framer-motion";
 import MetricCards from "../components/MetricCards";
 import CourseRoster from "../components/CourseRoster";
-import ChatWorkspace from "../components/ChatWorkspace";
-import GitVisualizer from "../components/GitVisualizer";
+import UpcomingEvents from "../components/UpcomingEvents";
+import ChatBar from "../components/ChatWorkspace";
 
-export default function Dashboard() {
+export default function Home({ profile, courses, events, loading }) {
+  const firstName = profile?.lastname?.split(" ")?.[0] || "there";
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
-      className="space-y-6"
+      transition={{ duration: 0.4 }}
+      className="flex flex-col gap-6 min-h-[calc(100vh-64px)]"
     >
-      {/* ─── Page Header ─────────────────────────────────────────────── */}
+      {/* ─── Greeting ────────────────────────────────────────────────── */}
       <div>
         <motion.h1
-          initial={{ opacity: 0, y: -10 }}
+          initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-2xl font-bold text-slate-50"
+          className="text-xl font-semibold text-[var(--color-text-primary)]"
         >
-          Command Center
+          Welcome back, {firstName}
         </motion.h1>
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.1 }}
-          className="text-sm text-slate-500 mt-1"
+          className="text-sm text-[var(--color-text-muted)] mt-1"
         >
-          Welcome back. Here's your learning intelligence at a glance.
+          {profile ? "Zetech Digital School" : "Loading your learning data..."}
         </motion.p>
       </div>
 
-      {/* ─── Metric Cards Row ────────────────────────────────────────── */}
-      <MetricCards />
+      {/* ─── Metric Cards (Top) ──────────────────────────────────────── */}
+      <MetricCards courses={courses} events={events} loading={loading} />
 
-      {/* ─── Split View: Roster + Chat ───────────────────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-        {/* Left: Course Roster + Recommendations */}
-        <div className="lg:col-span-5">
-          <CourseRoster />
-        </div>
-
-        {/* Right: Chat Workspace */}
-        <div className="lg:col-span-7">
-          <ChatWorkspace />
-        </div>
+      {/* ─── Analytics Split (Middle) ────────────────────────────────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 flex-1">
+        <CourseRoster courses={courses} loading={loading} />
+        <UpcomingEvents events={events} loading={loading} />
       </div>
 
-      {/* ─── Git Visualizer ──────────────────────────────────────────── */}
-      <div>
-        <motion.h2
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.3 }}
-          className="text-lg font-semibold text-slate-200 mb-4"
-        >
-          Recent Commit Activity
-        </motion.h2>
-        <GitVisualizer />
+      {/* ─── Chat Bar (Bottom) ───────────────────────────────────────── */}
+      <div className="sticky bottom-0 z-20 pb-2">
+        <ChatBar />
       </div>
     </motion.div>
   );

@@ -1,61 +1,37 @@
 /**
- * SomaSync — Omni-Input Chat Workspace
- * Terminal-styled chat interface for AI interactions.
+ * SomaSync — Chat Input Bar (v2 — Bottom Bar)
+ * Full-width AI chat bar pinned at the bottom of the home page.
  */
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Terminal, Send, Sparkles, Bot, User, Loader2 } from "lucide-react";
+import { Send, Sparkles, Bot, Loader2, X } from "lucide-react";
 
-const initialMessages = [
-  {
-    role: "system",
-    content: "SomaSync AI v0.1.0 — Powered by Gemini 2.5 Flash",
-    timestamp: new Date().toISOString(),
-  },
-  {
-    role: "assistant",
-    content: "Welcome to SomaSync. I can help you analyze your coursework, generate flashcards from syllabi, or explain concepts from your enrolled modules. What would you like to work on?",
-    timestamp: new Date().toISOString(),
-  },
-];
-
-export default function ChatWorkspace() {
-  const [messages, setMessages] = useState(initialMessages);
+export default function ChatBar() {
   const [input, setInput] = useState("");
+  const [messages, setMessages] = useState([]);
   const [isTyping, setIsTyping] = useState(false);
-  const scrollRef = useRef(null);
+  const [expanded, setExpanded] = useState(false);
   const inputRef = useRef(null);
 
-  useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-  }, [messages]);
-
-  const handleSend = async () => {
+  const handleSend = () => {
     if (!input.trim()) return;
 
-    const userMsg = {
-      role: "user",
-      content: input.trim(),
-      timestamp: new Date().toISOString(),
-    };
-
+    const userMsg = { role: "user", content: input.trim(), ts: Date.now() };
     setMessages((prev) => [...prev, userMsg]);
     setInput("");
     setIsTyping(true);
+    setExpanded(true);
 
-    // Simulate AI response (will be replaced with real Gemini call)
     setTimeout(() => {
       const aiMsg = {
         role: "assistant",
-        content: `Processing your request about "${userMsg.content.slice(0, 50)}..." — This will connect to the Gemini 2.5 Flash API when the backend pipeline is live. For now, I'm in mock mode. Try asking about your CS301 coursework or upcoming deadlines!`,
-        timestamp: new Date().toISOString(),
+        content: `I'll help with "${userMsg.content.substring(0, 60)}". The Gemini 2.5 Flash pipeline will be connected soon — for now I'm in preview mode. Try asking about your courses or upcoming deadlines!`,
+        ts: Date.now(),
       };
       setMessages((prev) => [...prev, aiMsg]);
       setIsTyping(false);
-    }, 1200);
+    }, 1000);
   };
 
   const handleKeyDown = (e) => {
@@ -63,122 +39,96 @@ export default function ChatWorkspace() {
       e.preventDefault();
       handleSend();
     }
+    if (e.key === "Escape") {
+      setExpanded(false);
+    }
   };
 
   return (
-    <div className="glass-card flex flex-col h-full" style={{ minHeight: 420 }}>
-      {/* ─── Header ──────────────────────────────────────────────────── */}
-      <div
-        className="flex items-center gap-3 px-5 py-3 border-b"
-        style={{ borderColor: "rgba(34, 211, 238, 0.08)" }}
-      >
-        <div className="p-1.5 rounded-lg" style={{ background: "rgba(34, 211, 238, 0.1)" }}>
-          <Terminal size={14} className="text-cyan-400" />
-        </div>
-        <div className="flex-1">
-          <h3 className="text-xs font-semibold text-slate-200">Omni-Input Workspace</h3>
-          <p className="text-[10px] text-slate-500 font-mono">soma-ai :: gemini-2.5-flash</p>
-        </div>
-        <Sparkles size={14} className="text-amber-400 animate-float" />
-      </div>
-
-      {/* ─── Messages ────────────────────────────────────────────────── */}
-      <div
-        ref={scrollRef}
-        className="flex-1 overflow-y-auto px-5 py-4 space-y-4"
-        style={{ maxHeight: 350 }}
-      >
-        <AnimatePresence>
-          {messages.map((msg, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
-              className={`flex gap-3 ${msg.role === "user" ? "flex-row-reverse" : ""}`}
-            >
-              {msg.role !== "system" && (
+    <motion.div
+      layout
+      className="card overflow-hidden"
+      style={{ borderColor: expanded ? "rgba(99, 102, 241, 0.15)" : undefined }}
+    >
+      {/* ─── Expanded Messages ─────────────────────────────────────── */}
+      <AnimatePresence>
+        {expanded && messages.length > 0 && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            className="border-b"
+            style={{ borderColor: "var(--color-border-subtle)" }}
+          >
+            <div className="flex items-center justify-between px-5 py-2">
+              <div className="flex items-center gap-2">
+                <Bot size={13} className="text-[var(--color-primary)]" />
+                <span className="text-[11px] text-[var(--color-text-muted)] font-medium">SomaSync AI</span>
+              </div>
+              <button
+                onClick={() => setExpanded(false)}
+                className="p-1 rounded-md hover:bg-[rgba(99,102,241,0.1)] transition-colors cursor-pointer"
+              >
+                <X size={13} className="text-[var(--color-text-muted)]" />
+              </button>
+            </div>
+            <div className="px-5 pb-3 space-y-2 max-h-48 overflow-y-auto">
+              {messages.map((msg, i) => (
                 <div
-                  className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5"
-                  style={{
-                    background: msg.role === "user"
-                      ? "rgba(59, 130, 246, 0.15)"
-                      : "rgba(34, 211, 238, 0.1)",
-                  }}
+                  key={i}
+                  className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
                 >
-                  {msg.role === "user" ? (
-                    <User size={13} className="text-blue-400" />
-                  ) : (
-                    <Bot size={13} className="text-cyan-400" />
-                  )}
+                  <div
+                    className="max-w-[80%] px-3 py-2 rounded-xl text-xs leading-relaxed"
+                    style={
+                      msg.role === "user"
+                        ? { background: "rgba(99, 102, 241, 0.12)", color: "var(--color-text-primary)" }
+                        : { background: "rgba(17, 21, 36, 0.8)", color: "var(--color-text-secondary)" }
+                    }
+                  >
+                    {msg.content}
+                  </div>
+                </div>
+              ))}
+              {isTyping && (
+                <div className="flex items-center gap-2 text-[11px] text-[var(--color-text-muted)]">
+                  <Loader2 size={11} className="animate-spin text-[var(--color-primary)]" />
+                  Thinking...
                 </div>
               )}
-
-              <div
-                className={`
-                  max-w-[85%] px-3.5 py-2.5 rounded-xl text-xs leading-relaxed
-                  ${msg.role === "system"
-                    ? "text-center w-full text-slate-600 font-mono text-[10px] py-1"
-                    : msg.role === "user"
-                      ? "text-slate-200 ml-auto"
-                      : "text-slate-300"
-                  }
-                `}
-                style={
-                  msg.role === "system"
-                    ? {}
-                    : msg.role === "user"
-                      ? { background: "rgba(59, 130, 246, 0.12)", border: "1px solid rgba(59, 130, 246, 0.15)" }
-                      : { background: "rgba(14, 20, 37, 0.8)", border: "1px solid rgba(34, 211, 238, 0.08)" }
-                }
-              >
-                {msg.content}
-              </div>
-            </motion.div>
-          ))}
-        </AnimatePresence>
-
-        {isTyping && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="flex items-center gap-2 text-xs text-slate-500"
-          >
-            <Loader2 size={12} className="animate-spin text-cyan-400" />
-            <span className="font-mono">soma-ai is thinking...</span>
+            </div>
           </motion.div>
         )}
-      </div>
+      </AnimatePresence>
 
-      {/* ─── Input ───────────────────────────────────────────────────── */}
-      <div
-        className="px-4 py-3 border-t"
-        style={{ borderColor: "rgba(34, 211, 238, 0.08)" }}
-      >
-        <div className="flex items-center gap-2">
-          <span className="text-cyan-500 text-xs font-mono flex-shrink-0">❯</span>
-          <input
-            ref={inputRef}
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Ask about coursework, generate flashcards, or analyze progress..."
-            className="terminal-input flex-1 !py-2 !px-3 text-xs"
-            id="omni-input"
-          />
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={handleSend}
-            disabled={!input.trim()}
-            className="p-2 rounded-lg transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
-            style={{ background: "rgba(34, 211, 238, 0.1)" }}
-          >
-            <Send size={14} className="text-cyan-400" />
-          </motion.button>
-        </div>
+      {/* ─── Input Bar ─────────────────────────────────────────────── */}
+      <div className="flex items-center gap-3 px-5 py-3">
+        <Sparkles size={16} className="text-[var(--color-primary)] flex-shrink-0" />
+        <input
+          ref={inputRef}
+          type="text"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={handleKeyDown}
+          onFocus={() => messages.length > 0 && setExpanded(true)}
+          placeholder="Ask SomaSync AI about your courses, generate flashcards, or plan your study schedule..."
+          className="chat-input !border-0 !bg-transparent !p-0 !shadow-none flex-1"
+          id="soma-chat-input"
+        />
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={handleSend}
+          disabled={!input.trim()}
+          className="p-2.5 rounded-xl transition-all cursor-pointer disabled:opacity-25 disabled:cursor-not-allowed"
+          style={{
+            background: input.trim() ? "linear-gradient(135deg, #6366F1, #818CF8)" : "rgba(99, 102, 241, 0.08)",
+          }}
+        >
+          <Send size={14} className="text-white" />
+        </motion.button>
       </div>
-    </div>
+    </motion.div>
   );
 }

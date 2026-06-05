@@ -17,11 +17,11 @@ settings = get_settings()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan — startup and shutdown hooks."""
-    print("🚀 SomaSync backend starting up...")
+    print("[*] SomaSync backend starting up...")
     print(f"   Environment: {settings.environment}")
     print(f"   Moodle Endpoint: {settings.moodle_base_url}")
     yield
-    print("🛑 SomaSync backend shutting down...")
+    print("[*] SomaSync backend shutting down...")
 
 
 app = FastAPI(
