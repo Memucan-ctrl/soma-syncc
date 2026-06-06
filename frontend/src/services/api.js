@@ -4,7 +4,7 @@
  */
 
 // Dynamically use /api in dev (proxied to port 8000) or /_/backend/api in production (routed by Vercel)
-const API_BASE = import.meta.env.DEV ? "/api" : "/_/backend/api";
+const API_BASE = import.meta.env.DEV ? "/api" : "https://somasync-backend.livelyground-102354d4.switzerlandnorth.azurecontainerapps.io/api";
 
 async function apiFetch(endpoint, options = {}) {
   try {

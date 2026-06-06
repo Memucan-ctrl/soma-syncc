@@ -20,8 +20,8 @@ import {
 
 const navItems = [
   { id: "home", label: "Home", icon: LayoutDashboard },
-  { id: "moodle", label: "Asset Manager", icon: Layers },
-  { id: "git", label: "Git Visualizer", icon: GitBranch },
+  { id: "moodle", label: "Study Lab", icon: Layers },
+  { id: "git", label: "DevTracker", icon: GitBranch },
   { id: "flashcards", label: "Flashcards", icon: BookOpen },
   { id: "timetable", label: "Timetable", icon: CalendarClock },
 ];
