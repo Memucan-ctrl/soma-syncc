@@ -11,10 +11,16 @@ import google.generativeai as genai
 router = APIRouter(prefix="/api/ai", tags=["AI Consultation"])
 
 
+class ChatMessage(BaseModel):
+    role: str
+    content: str
+
+
 class ChatRequest(BaseModel):
     message: str
     course_code: str | None = None
     context: str | None = None
+    history: list[ChatMessage] | None = None
 
 
 class ChatResponse(BaseModel):
@@ -24,7 +30,7 @@ class ChatResponse(BaseModel):
 @router.post("/chat", response_model=ChatResponse)
 async def ai_chat(payload: ChatRequest):
     """
-    Generate study consultation responses using Gemini 2.5 Flash.
+    Generate study consultation responses using Gemini 2.5 Flash with full conversation memory.
     """
     api_key = os.environ.get("GEMINI_API_KEY")
     
@@ -44,22 +50,39 @@ async def ai_chat(payload: ChatRequest):
 
     try:
         genai.configure(api_key=api_key)
-        # Use gemini-1.5-flash or gemini-2.5-flash
-        model = genai.GenerativeModel("gemini-2.5-flash")
         
-        system_instruction = (
-            "You are an elite academic tutor and teaching assistant for university courses.\n"
-            "Your tone is professional, encouraging, and highly technical. Use Markdown for formatting.\n"
+        # Configure GenerativeModel with academic tutor persona instruction
+        model = genai.GenerativeModel(
+            model_name="gemini-2.5-flash",
+            system_instruction=(
+                "You are an elite academic tutor and teaching assistant for university courses.\n"
+                "Your tone is professional, encouraging, and highly technical. Use Markdown for formatting.\n"
+            )
         )
         
-        prompt = system_instruction
+        # Build chat history mapped to Gemini's expected user/model roles
+        gemini_history = []
+        if payload.history:
+            for h in payload.history:
+                role = "model" if h.role in ("assistant", "model") else "user"
+                gemini_history.append({
+                    "role": role,
+                    "parts": [h.content]
+                })
+        
+        # Start stateful chat session with the provided conversation history
+        chat = model.start_chat(history=gemini_history)
+        
+        # Prepend optional metadata/notes context to the user's message
+        prompt_prefix = ""
         if payload.course_code:
-            prompt += f"The student is asking about the course: {payload.course_code}.\n"
+            prompt_prefix += f"[Course context: Enrolled in {payload.course_code}]\n"
         if payload.context:
-            prompt += f"Here is the context of the course materials and notes: {payload.context}\n"
-        prompt += f"User query: {payload.message}\n"
-
-        response = model.generate_content(prompt)
+            prompt_prefix += f"[Materials/Notes context:\n{payload.context}]\n"
+        
+        full_prompt = f"{prompt_prefix}{payload.message}" if prompt_prefix else payload.message
+        
+        response = chat.send_message(full_prompt)
         return ChatResponse(response=response.text)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

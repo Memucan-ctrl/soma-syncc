@@ -116,6 +116,8 @@ export default function ChatWorkspace({ isOpen, onClose, isPage = false, pending
           ts: Date.now(),
         };
 
+        const history = messages.map(m => ({ role: m.role, content: m.content }));
+
         setThreads((prev) =>
           prev.map((t) =>
             t.id === threadId
@@ -135,7 +137,7 @@ export default function ChatWorkspace({ isOpen, onClose, isPage = false, pending
         setOcrError(null);
 
         try {
-          const data = await sendConsultationQuery(fullContent);
+          const data = await sendConsultationQuery(fullContent, "", "", history);
           setThreads((prev) =>
             prev.map((t) =>
               t.id === threadId
@@ -252,6 +254,8 @@ export default function ChatWorkspace({ isOpen, onClose, isPage = false, pending
       ts: Date.now(),
     };
 
+    const history = messages.map(m => ({ role: m.role, content: m.content }));
+
     setThreads((prev) =>
       prev.map((t) =>
         t.id === threadId
@@ -271,7 +275,7 @@ export default function ChatWorkspace({ isOpen, onClose, isPage = false, pending
     setOcrError(null);
 
     try {
-      const data = await sendConsultationQuery(fullContent);
+      const data = await sendConsultationQuery(fullContent, "", "", history);
       setThreads((prev) =>
         prev.map((t) =>
           t.id === threadId

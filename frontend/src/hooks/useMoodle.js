@@ -35,8 +35,41 @@ export function useProfile() {
   return useAsyncData(api.fetchProfile);
 }
 
+function isAcademicCourse(course) {
+  const name = course.fullname?.toLowerCase().trim() || "";
+  if (
+    name === "fa" ||
+    name === "faq" ||
+    name.includes("survey") ||
+    name.includes("contact") ||
+    name.includes("rule") ||
+    name.includes("regulation") ||
+    name.includes("orientation") ||
+    name.includes("timetable") ||
+    name.includes("passlist") ||
+    name.includes("result") ||
+    name.includes("conference") ||
+    name.includes("support") ||
+    name.includes("news") ||
+    name.includes("announcements")
+  ) {
+    return false;
+  }
+  return true;
+}
+
 export function useMyCourses() {
-  return useAsyncData(api.fetchMyCourses);
+  const result = useAsyncData(api.fetchMyCourses);
+  if (result.data && Array.isArray(result.data.courses)) {
+    return {
+      ...result,
+      data: {
+        ...result.data,
+        courses: result.data.courses.filter(isAcademicCourse)
+      }
+    };
+  }
+  return result;
 }
 
 export function useUpcomingEvents() {
@@ -52,7 +85,17 @@ export function useAssignments(courseIds = "") {
 }
 
 export function useRecentCourses() {
-  return useAsyncData(api.fetchRecentCourses);
+  const result = useAsyncData(api.fetchRecentCourses);
+  if (result.data && Array.isArray(result.data.courses)) {
+    return {
+      ...result,
+      data: {
+        ...result.data,
+        courses: result.data.courses.filter(isAcademicCourse)
+      }
+    };
+  }
+  return result;
 }
 
 export function useNotifications() {

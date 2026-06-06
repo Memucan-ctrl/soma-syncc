@@ -127,6 +127,7 @@ export default function AssetManager() {
       ? `${query}\n\n[Attached File (${attachedFileName})]:\n${attachedText}`
       : query;
 
+    const history = chatMessages.map(m => ({ role: m.role, content: m.content }));
     const userMsg = { role: "user", content: query, ts: Date.now() };
     setChatMessages((prev) => [...prev, userMsg]);
     setChatLoading(true);
@@ -140,7 +141,7 @@ export default function AssetManager() {
       .join("\n");
 
     try {
-      const data = await sendConsultationQuery(fullPromptText, courseCode, contentsContext);
+      const data = await sendConsultationQuery(fullPromptText, courseCode, contentsContext, history);
       setChatMessages((prev) => [
         ...prev,
         { role: "assistant", content: data.response, ts: Date.now() },
@@ -170,6 +171,7 @@ export default function AssetManager() {
 
     const { label, suffix } = prompts[mode] || prompts.explain;
 
+    const history = chatMessages.map(m => ({ role: m.role, content: m.content }));
     setChatMessages((prev) => [
       ...prev,
       { role: "user", content: `${label}: "${resourceName}"`, ts: Date.now() },
@@ -189,7 +191,7 @@ export default function AssetManager() {
         .join("\n");
 
       const fullPrompt = `${label} for "${resourceName}".${suffix}${ocrText ? `\n\n[Note Contents]:\n${ocrText}` : ""}`;
-      const aiData = await sendConsultationQuery(fullPrompt, courseCode, contentsContext);
+      const aiData = await sendConsultationQuery(fullPrompt, courseCode, contentsContext, history);
 
       setChatMessages((prev) => [
         ...prev,

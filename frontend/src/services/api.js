@@ -98,13 +98,13 @@ export async function fetchHealthCheck() {
   return apiFetch("/../health");
 }
 
-export async function sendConsultationQuery(message, courseCode = "", context = "") {
+export async function sendConsultationQuery(message, courseCode = "", context = "", history = []) {
   return apiFetch("/ai/chat", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ message, course_code: courseCode, context }),
+    body: JSON.stringify({ message, course_code: courseCode, context, history }),
   });
 }
 
