@@ -43,12 +43,11 @@ export default function Sidebar({ activeTab, onTabChange, profile, onLogout }) {
     >
       {/* ─── Logo ──────────────────────────────────────────────────── */}
       <div className="flex items-center gap-3 px-4 py-5 min-h-[68px]">
-        <div
-          className="flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center"
-          style={{ background: "linear-gradient(135deg, #6366F1, #818CF8)" }}
-        >
-          <Zap size={18} className="text-white" />
-        </div>
+        <img
+          src="/logo.png"
+          className="flex-shrink-0 w-9 h-9 object-contain"
+          alt="SomaSync Logo"
+        />
         <AnimatePresence>
           {!collapsed && (
             <motion.div

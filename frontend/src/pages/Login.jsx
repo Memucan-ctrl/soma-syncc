@@ -79,14 +79,13 @@ export default function Login({ onLoginSuccess }) {
 
           {/* ─── Logo & Header ────────────────────────────────────────── */}
           <div className="flex flex-col items-center text-center mb-8">
-            <motion.div
+            <motion.img
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="w-12 h-12 rounded-2xl flex items-center justify-center mb-4"
-              style={{ background: "linear-gradient(135deg, #6366F1, #818CF8)" }}
-            >
-              <Zap className="text-white" size={24} />
-            </motion.div>
+              src="/logo.png"
+              className="w-16 h-16 object-contain mb-3"
+              alt="SomaSync Logo"
+            />
             <h2 className="text-2xl font-bold tracking-tight text-[var(--color-text-primary)]">
               SomaSync
             </h2>
