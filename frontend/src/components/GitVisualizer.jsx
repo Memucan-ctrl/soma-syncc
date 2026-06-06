@@ -88,6 +88,129 @@ function timeAgo(dateStr) {
   return d.toLocaleDateString();
 }
 
+// ─── Contributions Heatmap Component ──────────────────────────────
+function ContributionsHeatmap({ events }) {
+  const [hoveredCell, setHoveredCell] = useState(null);
+  
+  // Build commit counts per day from push events
+  const commitsByDay = {};
+  (events || []).forEach((event) => {
+    if (event.type !== "PushEvent") return;
+    const date = new Date(event.created_at).toISOString().split("T")[0];
+    commitsByDay[date] = (commitsByDay[date] || 0) + (event.payload?.commits?.length || 1);
+  });
+
+  // Generate 52 weeks of day cells (364 days back from today)
+  const today = new Date();
+  const weeks = [];
+  const dayOffset = today.getDay(); // 0=Sun, 6=Sat
+  
+  for (let w = 51; w >= 0; w--) {
+    const week = [];
+    for (let d = 0; d < 7; d++) {
+      const daysBack = w * 7 + (6 - d) + (6 - dayOffset);
+      const cellDate = new Date(today);
+      cellDate.setDate(today.getDate() - daysBack);
+      const key = cellDate.toISOString().split("T")[0];
+      week.push({ date: key, count: commitsByDay[key] || 0, dateObj: cellDate });
+    }
+    weeks.push(week);
+  }
+
+  const maxCount = Math.max(1, ...Object.values(commitsByDay));
+  
+  const getColor = (count) => {
+    if (count === 0) return "rgba(255,255,255,0.03)";
+    const intensity = Math.min(count / maxCount, 1);
+    if (intensity < 0.25) return "rgba(52, 211, 153, 0.2)";
+    if (intensity < 0.5) return "rgba(52, 211, 153, 0.4)";
+    if (intensity < 0.75) return "rgba(52, 211, 153, 0.65)";
+    return "rgba(52, 211, 153, 0.9)";
+  };
+
+  // Month labels
+  const monthLabels = [];
+  let lastMonth = -1;
+  weeks.forEach((week, wIdx) => {
+    const d = week[0]?.dateObj;
+    if (d && d.getMonth() !== lastMonth) {
+      lastMonth = d.getMonth();
+      monthLabels.push({ idx: wIdx, label: d.toLocaleDateString("en-US", { month: "short" }) });
+    }
+  });
+
+  return (
+    <div className="relative">
+      {/* Month labels */}
+      <div className="flex ml-8 mb-1.5 text-[9px] text-[var(--color-text-muted)] font-mono" style={{ gap: 0 }}>
+        {monthLabels.map((m, i) => (
+          <span
+            key={i}
+            className="absolute"
+            style={{ left: `${32 + m.idx * 13}px` }}
+          >
+            {m.label}
+          </span>
+        ))}
+      </div>
+
+      <div className="flex gap-0 mt-5">
+        {/* Day labels */}
+        <div className="flex flex-col gap-[2px] mr-1.5 text-[9px] text-[var(--color-text-muted)] font-mono pt-0">
+          {["", "Mon", "", "Wed", "", "Fri", ""].map((d, i) => (
+            <div key={i} className="h-[11px] flex items-center justify-end w-6">{d}</div>
+          ))}
+        </div>
+
+        {/* Grid */}
+        <div className="flex gap-[2px]">
+          {weeks.map((week, wIdx) => (
+            <div key={wIdx} className="flex flex-col gap-[2px]">
+              {week.map((cell, dIdx) => (
+                <div
+                  key={dIdx}
+                  className="w-[11px] h-[11px] rounded-[2px] transition-all relative cursor-default"
+                  style={{ background: getColor(cell.count) }}
+                  onMouseEnter={() => setHoveredCell(`${wIdx}-${dIdx}`)}
+                  onMouseLeave={() => setHoveredCell(null)}
+                >
+                  {hoveredCell === `${wIdx}-${dIdx}` && (
+                    <div
+                      className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1.5 rounded-lg text-[10px] font-semibold whitespace-nowrap z-50 pointer-events-none"
+                      style={{
+                        background: "var(--color-base-800)",
+                        border: "1px solid var(--color-border-subtle)",
+                        color: "var(--color-text-primary)",
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+                      }}
+                    >
+                      <span className="text-[var(--color-accent-emerald)] font-bold">{cell.count}</span>{" "}
+                      {cell.count === 1 ? "commit" : "commits"} on {cell.date}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Legend */}
+      <div className="flex items-center gap-2 mt-3 justify-end text-[9px] text-[var(--color-text-muted)] font-mono">
+        <span>Less</span>
+        {[0, 0.25, 0.5, 0.75, 1].map((level, i) => (
+          <div
+            key={i}
+            className="w-[11px] h-[11px] rounded-[2px]"
+            style={{ background: level === 0 ? "rgba(255,255,255,0.03)" : `rgba(52, 211, 153, ${0.2 + level * 0.7})` }}
+          />
+        ))}
+        <span>More</span>
+      </div>
+    </div>
+  );
+}
+
 export default function GitVisualizer() {
   const [username, setUsername] = useState(
     () => localStorage.getItem("somasync_github_user") || ""
@@ -392,6 +515,18 @@ export default function GitVisualizer() {
               </div>
             </div>
           )}
+
+          {/* ─── Contributions Heatmap ────────────────────────────── */}
+          <div className="card p-5">
+            <h3 className="text-xs font-semibold text-[var(--color-text-secondary)] mb-4 flex items-center gap-2">
+              <TrendingUp size={13} className="text-[var(--color-accent-emerald)]" />
+              Contributions
+              <span className="text-[10px] text-[var(--color-text-muted)] font-normal ml-1">
+                ({totalCommits} commits in the last 90 days)
+              </span>
+            </h3>
+            <ContributionsHeatmap events={events} />
+          </div>
 
           {/* ─── Tab Switcher ──────────────────────────────────────── */}
           <div className="flex bg-[var(--color-base-900)] p-1 rounded-xl border border-[var(--color-border-subtle)] w-fit">

@@ -45,9 +45,9 @@ export default function CourseRoster({ courses, loading, onRefetch }) {
     );
   }
 
-  // Filter to show active, non-hidden courses
+  // Filter to show active, non-hidden courses (exclude surveys)
   const activeCourses = (courses || [])
-    .filter((c) => !c.hidden)
+    .filter((c) => !c.hidden && !c.fullname?.toLowerCase().includes("survey"))
     .sort((a, b) => (b.lastaccess || 0) - (a.lastaccess || 0));
 
   return (

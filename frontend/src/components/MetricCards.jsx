@@ -11,14 +11,16 @@ function Skeleton({ className }) {
 }
 
 export default function MetricCards({ courses, events, loading }) {
-  const courseCount = courses?.length || 0;
-  const activeCourses = courses?.filter((c) => !c.hidden && !c.completed)?.length || 0;
+  // Filter out survey courses from all metrics
+  const filteredCourses = courses?.filter((c) => !c.fullname?.toLowerCase().includes("survey"));
+  const courseCount = filteredCourses?.length || 0;
+  const activeCourses = filteredCourses?.filter((c) => !c.hidden && !c.completed)?.length || 0;
   const eventCount = events?.length || 0;
   const nextEvent = events?.[0];
 
-  const avgProgress = courses?.length
+  const avgProgress = filteredCourses?.length
     ? Math.round(
-        courses.reduce((sum, c) => sum + (c.progress || 0), 0) / courses.length
+        filteredCourses.reduce((sum, c) => sum + (c.progress || 0), 0) / filteredCourses.length
       )
     : 0;
 
@@ -38,7 +40,7 @@ export default function MetricCards({ courses, events, loading }) {
       icon: BookOpen,
       label: "Enrolled Courses",
       value: loading ? null : `${activeCourses}`,
-      sub: loading ? null : `${courseCount} total · ${courses?.filter((c) => c.completed)?.length || 0} completed`,
+      sub: loading ? null : `${courseCount} total · ${filteredCourses?.filter((c) => c.completed)?.length || 0} completed`,
       accent: "#6366F1",
       bgAccent: "rgba(99, 102, 241, 0.1)",
     },
