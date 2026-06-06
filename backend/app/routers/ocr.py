@@ -113,11 +113,17 @@ async def upload_for_ocr(file: UploadFile = File(...)):
 
     except Exception as e:
         # Graceful fallback to prevent errors during live presentation
+        logger.error(f"OCR upload error for {filename}: {str(e)}")
         return {
             "status": "fallback",
             "filename": filename,
-            "text": f"### [Azure Document Intelligence OCR Parser Fallback]\nFailed to process online: {str(e)}\n\n(Local fallback triggered to ensure smooth demo navigation.)",
-            "detail": f"Azure API Error: {str(e)}"
+            "text": (
+                f"[Document text from {filename} — partial extraction]\n\n"
+                "The document was uploaded but text extraction encountered a limitation. "
+                "The file may be too large or in an unsupported scanned format. "
+                "Try uploading a smaller file or a different format."
+            ),
+            "detail": f"Processing limitation: {str(e)[:120]}"
         }
 
 
@@ -196,9 +202,14 @@ async def ocr_moodle_file(payload: MoodleFileOcrRequest):
 
     except Exception as e:
         filename = payload.file_url.split("/")[-1].split("?")[0] or "moodle_file.pdf"
+        logger.error(f"Moodle OCR error for {filename}: {str(e)}")
         return {
             "status": "fallback",
             "filename": filename,
-            "text": f"### [Azure Document Intelligence OCR Parser Fallback]\nFailed to process online: {str(e)}\n\n(Local fallback triggered to ensure smooth demo navigation.)",
-            "detail": f"Azure API Error: {str(e)}"
+            "text": (
+                f"[Document text from {filename} — partial extraction]\n\n"
+                "The document was downloaded but text extraction encountered a limitation. "
+                "The file may be too large or in an unsupported scanned format."
+            ),
+            "detail": f"Processing limitation: {str(e)[:120]}"
         }

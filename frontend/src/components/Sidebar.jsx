@@ -23,7 +23,7 @@ const navItems = [
   { id: "moodle", label: "Study Lab", icon: Layers },
   { id: "git", label: "DevTracker", icon: GitBranch },
   { id: "flashcards", label: "Flashcards", icon: BookOpen },
-  { id: "timetable", label: "Timetable", icon: CalendarClock },
+  { id: "timetable", label: "Study Planner", icon: CalendarClock },
 ];
 
 export default function Sidebar({ activeTab, onTabChange, profile, onLogout }) {
@@ -85,7 +85,7 @@ export default function Sidebar({ activeTab, onTabChange, profile, onLogout }) {
                 className="pulse-dot"
                 style={{ background: "var(--color-accent-emerald)", boxShadow: "0 0 6px var(--color-accent-emerald)" }}
               />
-              Live · Zetech Moodle
+              Connected · Live Sync
             </div>
           </motion.div>
         )}
@@ -129,7 +129,7 @@ export default function Sidebar({ activeTab, onTabChange, profile, onLogout }) {
                 {firstName}
               </p>
               <p className="text-[10px] text-[var(--color-text-muted)] truncate">
-                Zetech Digital School
+                Digital School
               </p>
             </div>
             <button

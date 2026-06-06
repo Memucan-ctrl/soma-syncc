@@ -119,15 +119,9 @@ export default function CourseRoster({ courses, loading, onRefetch }) {
                 )}
               </div>
 
-              <a
-                href={`https://elearning.zetech.ac.ke/course/view.php?id=${course.id}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={(e) => e.stopPropagation()}
-                className="opacity-0 group-hover:opacity-100 transition-opacity p-1"
-              >
+              <div className="opacity-0 group-hover:opacity-100 transition-opacity p-1">
                 <ExternalLink size={12} className="text-[var(--color-text-muted)]" />
-              </a>
+              </div>
             </motion.div>
           );
         })}

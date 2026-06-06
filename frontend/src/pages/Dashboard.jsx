@@ -34,7 +34,7 @@ export default function Home({ profile, courses, events, loading }) {
           transition={{ delay: 0.1 }}
           className="text-sm text-[var(--color-text-muted)] mt-1"
         >
-          {profile ? "Zetech Digital School" : "Loading your learning data..."}
+          {profile ? "Your Academic Dashboard" : "Loading your learning data..."}
         </motion.p>
       </div>
 

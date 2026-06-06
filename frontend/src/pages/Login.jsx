@@ -33,7 +33,7 @@ export default function Login({ onLoginSuccess }) {
         onLoginSuccess(data.token, data.profile);
       }, 1000);
     } catch (err) {
-      setError(err.message || "Failed to connect to Zetech Moodle.");
+      setError(err.message || "Failed to connect to the portal.");
       setLoading(false);
     }
   };
@@ -90,7 +90,7 @@ export default function Login({ onLoginSuccess }) {
               SomaSync
             </h2>
             <p className="text-xs text-[var(--color-text-muted)] mt-1.5 uppercase tracking-wider font-semibold">
-              Zetech University Portal
+              University Student Portal
             </p>
           </div>
 
@@ -204,7 +204,7 @@ export default function Login({ onLoginSuccess }) {
 
                 {/* Action Info */}
                 <p className="text-[10px] text-[var(--color-text-muted)] leading-relaxed text-center">
-                  Your credentials sync directly with the official Zetech Digital School server. We do not store your password.
+                  Your credentials sync directly with your official University portal. We do not store your password.
                 </p>
 
                 {/* Submit Button */}

@@ -49,12 +49,19 @@ export default function ChatBar() {
     const file = e.target.files[0];
     if (!file) return;
 
+    // Validate file size (10MB max for Azure Document Intelligence)
+    const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+    if (file.size > MAX_FILE_SIZE) {
+      setOcrError(`File is too large (${(file.size / 1024 / 1024).toFixed(1)}MB). Maximum size is 10MB. Try compressing or splitting the document.`);
+      e.target.value = "";
+      return;
+    }
+
     setUploadingOcr(true);
     setOcrError(null);
     try {
       const data = await uploadFileForOcr(file);
       if (data.status === "fallback") {
-        // Log fallback but still attach extracted content if any
         console.warn("OCR fallback:", data.detail);
       }
       setAttachedText(data.text);

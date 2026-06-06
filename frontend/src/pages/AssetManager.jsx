@@ -115,6 +115,14 @@ export default function AssetManager() {
     const file = e.target.files[0];
     if (!file) return;
 
+    // Validate file size (10MB max)
+    const MAX_FILE_SIZE = 10 * 1024 * 1024;
+    if (file.size > MAX_FILE_SIZE) {
+      setOcrError(`File is too large (${(file.size / 1024 / 1024).toFixed(1)}MB). Max size is 10MB.`);
+      e.target.value = "";
+      return;
+    }
+
     setUploadingOcr(true);
     setOcrError(null);
     try {
@@ -336,7 +344,12 @@ export default function AssetManager() {
               </div>
             ) : (
               <div className="space-y-3 pt-2">
-                {courseContents.map((section) => {
+                {courseContents.filter((section) => {
+                  // Filter out empty "New section" placeholder entries
+                  const isPlaceholder = section.name?.toLowerCase().trim() === "new section";
+                  const hasModules = section.modules && section.modules.length > 0;
+                  return !isPlaceholder || hasModules;
+                }).map((section) => {
                   const isExpanded = !!expandedSections[section.id];
                   const hasModules = section.modules && section.modules.length > 0;
 
