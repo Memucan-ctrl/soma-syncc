@@ -12,6 +12,7 @@ import AssetManager from "./pages/AssetManager";
 import GitVisualizer from "./components/GitVisualizer";
 import Flashcards from "./pages/Flashcards";
 import Timetable from "./pages/Timetable";
+import ChatWorkspace from "./components/ChatWorkspace";
 import { useProfile, useMyCourses, useUpcomingEvents } from "./hooks/useMoodle";
 import "./App.css";
 
@@ -36,6 +37,8 @@ function PlaceholderPage({ title, description }) {
 
 function AuthenticatedApp({ onLogout }) {
   const [activeTab, setActiveTab] = useState("home");
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [pendingAiAction, setPendingAiAction] = useState(null);
 
   // ─── Live data hooks ────────────────────────────────────────────
   const { data: profileData } = useProfile();
@@ -47,6 +50,11 @@ function AuthenticatedApp({ onLogout }) {
   const events = eventsData?.events;
   const loading = coursesLoading || eventsLoading;
 
+  const handleSendToAi = (query, text, filename) => {
+    setPendingAiAction({ query, text, filename });
+    setActiveTab("ai");
+  };
+
   const pages = {
     home: (
       <Home
@@ -54,6 +62,15 @@ function AuthenticatedApp({ onLogout }) {
         courses={courses}
         events={events}
         loading={loading}
+        onOpenAi={() => setActiveTab("ai")}
+        onSendToAi={handleSendToAi}
+      />
+    ),
+    ai: (
+      <ChatWorkspace
+        isPage={true}
+        pendingAiAction={pendingAiAction}
+        clearPendingAiAction={() => setPendingAiAction(null)}
       />
     ),
     moodle: <AssetManager />,
@@ -69,11 +86,13 @@ function AuthenticatedApp({ onLogout }) {
         onTabChange={setActiveTab} 
         profile={profile} 
         onLogout={onLogout}
+        collapsed={sidebarCollapsed}
+        onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
       />
 
       <main
         className="flex-1 transition-all duration-300 ease-in-out"
-        style={{ marginLeft: 240, padding: "28px 32px" }}
+        style={{ marginLeft: sidebarCollapsed ? 68 : 240, padding: "28px 32px" }}
       >
         {/* Subtle ambient glow */}
         <div

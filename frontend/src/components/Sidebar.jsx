@@ -2,7 +2,6 @@
  * SomaSync — Sidebar Navigation (v2 — Premium Design)
  */
 
-import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard,
@@ -16,18 +15,19 @@ import {
   Zap,
   LogOut,
   BookOpen,
+  Sparkles,
 } from "lucide-react";
 
 const navItems = [
   { id: "home", label: "Home", icon: LayoutDashboard },
+  { id: "ai", label: "SomaSync AI", icon: Sparkles },
   { id: "moodle", label: "Study Lab", icon: Layers },
   { id: "git", label: "DevTracker", icon: GitBranch },
   { id: "flashcards", label: "Flashcards", icon: BookOpen },
   { id: "timetable", label: "Study Planner", icon: CalendarClock },
 ];
 
-export default function Sidebar({ activeTab, onTabChange, profile, onLogout }) {
-  const [collapsed, setCollapsed] = useState(false);
+export default function Sidebar({ activeTab, onTabChange, profile, onLogout, collapsed, onToggleCollapse }) {
 
   const firstName = profile?.lastname?.split(" ")?.[0] || "Student";
 
@@ -150,7 +150,7 @@ export default function Sidebar({ activeTab, onTabChange, profile, onLogout }) {
           </button>
         ) : null}
         <button
-          onClick={() => setCollapsed(!collapsed)}
+          onClick={onToggleCollapse}
           className="w-full flex items-center justify-center py-2 rounded-xl text-[var(--color-text-muted)] hover:text-[var(--color-primary-light)] transition-colors cursor-pointer"
         >
           {collapsed ? <ChevronRight size={15} /> : <ChevronLeft size={15} />}

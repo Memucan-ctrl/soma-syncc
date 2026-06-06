@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 import { useMyCourses } from "../hooks/useMoodle";
 import { fetchCourseContents, sendConsultationQuery, uploadFileForOcr, ocrMoodleFile } from "../services/api";
+import MarkdownRenderer from "../components/MarkdownRenderer";
 
 export default function AssetManager() {
   const { data: coursesData, loading: coursesLoading } = useMyCourses();
@@ -445,9 +446,13 @@ export default function AssetManager() {
                         ? "bg-[var(--color-primary)] text-white shadow-md rounded-tr-sm"
                         : "bg-[var(--color-surface)] text-[var(--color-text-secondary)] border border-[var(--color-border-subtle)] rounded-tl-sm"
                     }`}>
-                      {msg.content.split("\n").map((line, idx) => (
-                        <p key={idx} className={idx > 0 ? "mt-1" : ""}>{line}</p>
-                      ))}
+                      {msg.role === "user" ? (
+                        msg.content.split("\n").map((line, idx) => (
+                          <p key={idx} className={idx > 0 ? "mt-1" : ""}>{line}</p>
+                        ))
+                      ) : (
+                        <MarkdownRenderer content={msg.content} />
+                      )}
                     </div>
                   </div>
                 ))}

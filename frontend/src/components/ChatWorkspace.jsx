@@ -24,6 +24,7 @@ import {
   Clock,
 } from "lucide-react";
 import { sendConsultationQuery, uploadFileForOcr } from "../services/api";
+import MarkdownRenderer from "./MarkdownRenderer";
 
 const THREADS_KEY = "somasync_chat_threads";
 
@@ -50,7 +51,7 @@ function timeAgo(ts) {
   return new Date(ts).toLocaleDateString();
 }
 
-export default function ChatWorkspace({ isOpen, onClose }) {
+export default function ChatWorkspace({ isOpen, onClose, isPage = false, pendingAiAction = null, clearPendingAiAction }) {
   const [threads, setThreads] = useState(loadThreads);
   const [activeThreadId, setActiveThreadId] = useState(null);
   const [input, setInput] = useState("");
@@ -73,17 +74,107 @@ export default function ChatWorkspace({ isOpen, onClose }) {
 
   // Scroll to bottom
   useEffect(() => {
-    if (isOpen) {
+    if (isPage || isOpen) {
       setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 80);
     }
-  }, [messages, isTyping, isOpen]);
+  }, [messages, isTyping, isOpen, isPage]);
 
   // Auto-select most recent thread or create new
   useEffect(() => {
-    if (isOpen && !activeThreadId && threads.length > 0) {
+    if ((isPage || isOpen) && !activeThreadId && threads.length > 0) {
       setActiveThreadId(threads[0].id);
     }
-  }, [isOpen]);
+  }, [isOpen, isPage]);
+
+  // Process pending actions from Quick AI Workspace
+  useEffect(() => {
+    if (pendingAiAction) {
+      const { query, text, filename } = pendingAiAction;
+      
+      let threadId = activeThreadId;
+      if (!threadId) {
+        const newThread = {
+          id: `thread-${Date.now()}`,
+          title: query.slice(0, 50) || "File Analysis",
+          messages: [],
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        };
+        setThreads((prev) => [newThread, ...prev]);
+        threadId = newThread.id;
+        setActiveThreadId(threadId);
+      }
+
+      const runSend = async () => {
+        const fullContent = text
+          ? `${query}\n\n[Attached File (${filename})]:\n${text}`
+          : query;
+
+        const userMsg = {
+          role: "user",
+          content: query || `Analyzed file: ${filename}`,
+          ts: Date.now(),
+        };
+
+        setThreads((prev) =>
+          prev.map((t) =>
+            t.id === threadId
+              ? {
+                  ...t,
+                  messages: [...t.messages, userMsg],
+                  title: t.messages.length === 0 ? (query.slice(0, 50) || "File Analysis") : t.title,
+                  updatedAt: Date.now(),
+                }
+              : t
+          )
+        );
+
+        setIsTyping(true);
+        setAttachedText("");
+        setAttachedFileName("");
+        setOcrError(null);
+
+        try {
+          const data = await sendConsultationQuery(fullContent);
+          setThreads((prev) =>
+            prev.map((t) =>
+              t.id === threadId
+                ? {
+                    ...t,
+                    messages: [
+                      ...t.messages.filter(m => m.ts !== userMsg.ts),
+                      userMsg,
+                      { role: "assistant", content: data.response, ts: Date.now() }
+                    ],
+                    updatedAt: Date.now()
+                  }
+                : t
+            )
+          );
+        } catch (err) {
+          setThreads((prev) =>
+            prev.map((t) =>
+              t.id === threadId
+                ? {
+                    ...t,
+                    messages: [
+                      ...t.messages,
+                      { role: "assistant", content: `Error: ${err.message || "Connection failed"}. Please retry.`, ts: Date.now() }
+                    ],
+                    updatedAt: Date.now()
+                  }
+                : t
+            )
+          );
+        } finally {
+          setIsTyping(false);
+        }
+      };
+
+      runSend();
+      clearPendingAiAction();
+    }
+  }, [pendingAiAction]);
 
   const createNewThread = useCallback(() => {
     const newThread = {
@@ -135,7 +226,6 @@ export default function ChatWorkspace({ isOpen, onClose }) {
     const query = presetText || input.trim();
     if (!query && !attachedText) return;
 
-    // Create thread if none active
     let threadId = activeThreadId;
     if (!threadId) {
       const newThread = {
@@ -162,7 +252,6 @@ export default function ChatWorkspace({ isOpen, onClose }) {
       ts: Date.now(),
     };
 
-    // Update thread
     setThreads((prev) =>
       prev.map((t) =>
         t.id === threadId
@@ -177,7 +266,6 @@ export default function ChatWorkspace({ isOpen, onClose }) {
     );
 
     setIsTyping(true);
-    const prevFileName = attachedFileName;
     setAttachedText("");
     setAttachedFileName("");
     setOcrError(null);
@@ -204,17 +292,9 @@ export default function ChatWorkspace({ isOpen, onClose }) {
     }
   };
 
-  if (!isOpen) return null;
-
-  return (
-    <AnimatePresence>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="fixed inset-0 z-[100] flex"
-        style={{ background: "rgba(4, 6, 14, 0.85)", backdropFilter: "blur(8px)" }}
-      >
+  const renderContent = () => {
+    return (
+      <>
         {/* ─── Left Sidebar: Thread History ──────────────────────────── */}
         <AnimatePresence>
           {sidebarOpen && (
@@ -230,7 +310,7 @@ export default function ChatWorkspace({ isOpen, onClose }) {
               <div className="p-4 border-b border-[var(--color-border-subtle)] flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <img src="/logo.png" className="w-6 h-6 object-contain" alt="Logo" />
-                  <h2 className="text-sm font-bold text-[var(--color-text-primary)]">SomaSync AI</h2>
+                  <h2 className="text-sm font-bold text-[var(--color-text-primary)]">Consultations</h2>
                 </div>
                 <button
                   onClick={() => setSidebarOpen(false)}
@@ -244,7 +324,7 @@ export default function ChatWorkspace({ isOpen, onClose }) {
               <div className="p-3">
                 <button
                   onClick={createNewThread}
-                  className="w-full flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold text-white cursor-pointer transition-all hover:opacity-90"
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold text-white cursor-pointer transition-all hover:opacity-90"
                   style={{ background: "linear-gradient(135deg, #6366F1, #818CF8)" }}
                 >
                   <Plus size={14} />
@@ -296,7 +376,7 @@ export default function ChatWorkspace({ isOpen, onClose }) {
         </AnimatePresence>
 
         {/* ─── Main Chat Panel ──────────────────────────────────────── */}
-        <div className="flex-1 flex flex-col min-w-0">
+        <div className="flex-1 flex flex-col min-w-0 bg-[var(--color-base-950)]">
           {/* Header */}
           <div className="px-5 py-3.5 border-b border-[var(--color-border-subtle)] flex items-center justify-between" style={{ background: "var(--color-base-900)" }}>
             <div className="flex items-center gap-3">
@@ -311,30 +391,32 @@ export default function ChatWorkspace({ isOpen, onClose }) {
               <Bot size={18} className="text-[var(--color-primary-light)]" />
               <div>
                 <h3 className="text-sm font-bold text-[var(--color-text-primary)]">
-                  {activeThread?.title || "SomaSync AI"}
+                  {activeThread?.title || "SomaSync AI Workspace"}
                 </h3>
                 <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5">
-                  Your intelligent study companion
+                  Your academic consultation history and live tutoring companion
                 </p>
               </div>
             </div>
-            <button
-              onClick={onClose}
-              className="p-2 rounded-xl text-[var(--color-text-muted)] hover:text-white hover:bg-[rgba(255,255,255,0.06)] transition-all cursor-pointer"
-            >
-              <X size={18} />
-            </button>
+            {!isPage && (
+              <button
+                onClick={onClose}
+                className="p-2 rounded-xl text-[var(--color-text-muted)] hover:text-white hover:bg-[rgba(255,255,255,0.06)] transition-all cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            )}
           </div>
 
           {/* Messages Area */}
-          <div className="flex-1 overflow-y-auto p-5 md:px-12 lg:px-20 space-y-5" style={{ background: "var(--color-base-950)" }}>
+          <div className="flex-1 overflow-y-auto p-5 md:px-8 lg:px-12 space-y-5">
             {messages.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-center p-6 max-w-lg mx-auto">
                 <div className="w-16 h-16 rounded-2xl bg-[rgba(99,102,241,0.08)] flex items-center justify-center mb-5">
                   <Sparkles size={28} className="text-[var(--color-primary-light)] animate-pulse" />
                 </div>
-                <h4 className="text-lg font-bold text-[var(--color-text-primary)] mb-2">How can I help you study?</h4>
-                <p className="text-xs text-[var(--color-text-muted)] max-w-sm leading-relaxed mb-8">
+                <h4 className="text-sm font-bold text-[var(--color-text-primary)] mb-2">How can I help you study?</h4>
+                <p className="text-xs text-[var(--color-text-muted)] max-w-sm leading-relaxed mb-6">
                   Upload whiteboard photos, lecture notes, or ask any academic question. I can analyze documents, explain concepts, and generate practice material.
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-md">
@@ -347,7 +429,7 @@ export default function ChatWorkspace({ isOpen, onClose }) {
                     <button
                       key={idx}
                       onClick={() => handleSend(preset)}
-                      className="p-3.5 text-left rounded-xl border border-[var(--color-border-subtle)] hover:border-[var(--color-border-hover)] bg-[rgba(255,255,255,0.01)] text-xs text-[var(--color-text-secondary)] transition-all cursor-pointer hover:bg-[rgba(99,102,241,0.03)]"
+                      className="p-3 text-left rounded-xl border border-[var(--color-border-subtle)] hover:border-[var(--color-border-hover)] bg-[rgba(255,255,255,0.01)] text-[11px] text-[var(--color-text-secondary)] transition-all cursor-pointer hover:bg-[rgba(99,102,241,0.03)]"
                     >
                       {preset}
                     </button>
@@ -363,15 +445,19 @@ export default function ChatWorkspace({ isOpen, onClose }) {
                     </div>
                   )}
                   <div
-                    className={`max-w-[75%] px-4 py-3 rounded-2xl text-[13px] leading-relaxed ${
+                    className={`max-w-[85%] px-4 py-3 rounded-2xl leading-relaxed ${
                       msg.role === "user"
-                        ? "bg-[var(--color-primary)] text-white shadow-lg rounded-tr-sm"
+                        ? "bg-[var(--color-primary)] text-white shadow-lg rounded-tr-sm text-xs"
                         : "bg-[var(--color-surface)] text-[var(--color-text-secondary)] border border-[var(--color-border-subtle)] rounded-tl-sm"
                     }`}
                   >
-                    {msg.content.split("\n").map((line, idx) => (
-                      <p key={idx} className={idx > 0 ? "mt-1.5" : ""}>{line}</p>
-                    ))}
+                    {msg.role === "user" ? (
+                      msg.content.split("\n").map((line, idx) => (
+                        <p key={idx} className={idx > 0 ? "mt-1.5" : ""}>{line}</p>
+                      ))
+                    ) : (
+                      <MarkdownRenderer content={msg.content} />
+                    )}
                   </div>
                   {msg.role === "user" && (
                     <div className="w-8 h-8 rounded-xl bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.08)] flex items-center justify-center flex-shrink-0 text-[var(--color-text-secondary)]">
@@ -445,7 +531,7 @@ export default function ChatWorkspace({ isOpen, onClose }) {
               onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
               disabled={uploadingOcr || isTyping}
               placeholder="Ask anything about your courses..."
-              className="flex-1 text-sm py-3 px-4 rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-base-950)] text-[var(--color-text-primary)] outline-none focus:border-[var(--color-primary-light)] transition-colors placeholder:text-[var(--color-text-muted)] disabled:opacity-50"
+              className="flex-1 text-xs py-3 px-4 rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-base-950)] text-[var(--color-text-primary)] outline-none focus:border-[var(--color-primary-light)] transition-colors placeholder:text-[var(--color-text-muted)] disabled:opacity-50"
             />
             <motion.button
               whileHover={{ scale: 1.05 }}
@@ -459,6 +545,36 @@ export default function ChatWorkspace({ isOpen, onClose }) {
             </motion.button>
           </div>
         </div>
+      </>
+    );
+  };
+
+  if (isPage) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        className="flex w-full rounded-2xl overflow-hidden border border-[var(--color-border-subtle)] bg-[rgba(17,21,36,0.6)] shadow-xl relative z-10"
+        style={{ height: "calc(100vh - 120px)" }}
+      >
+        {renderContent()}
+      </motion.div>
+    );
+  }
+
+  if (!isOpen) return null;
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-[100] flex"
+        style={{ background: "rgba(4, 6, 14, 0.85)", backdropFilter: "blur(8px)" }}
+      >
+        {renderContent()}
       </motion.div>
     </AnimatePresence>
   );
