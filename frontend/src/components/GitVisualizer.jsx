@@ -140,72 +140,74 @@ function ContributionsHeatmap({ events }) {
   });
 
   return (
-    <div className="relative">
-      {/* Month labels */}
-      <div className="flex ml-8 mb-1.5 text-[9px] text-[var(--color-text-muted)] font-mono" style={{ gap: 0 }}>
-        {monthLabels.map((m, i) => (
-          <span
-            key={i}
-            className="absolute"
-            style={{ left: `${32 + m.idx * 13}px` }}
-          >
-            {m.label}
-          </span>
-        ))}
-      </div>
-
-      <div className="flex gap-0 mt-5">
-        {/* Day labels */}
-        <div className="flex flex-col gap-[2px] mr-1.5 text-[9px] text-[var(--color-text-muted)] font-mono pt-0">
-          {["", "Mon", "", "Wed", "", "Fri", ""].map((d, i) => (
-            <div key={i} className="h-[11px] flex items-center justify-end w-6">{d}</div>
+    <div className="relative overflow-x-auto pb-2 scrollbar-none -mx-4 px-4 md:mx-0 md:px-0">
+      <div className="min-w-[680px] relative">
+        {/* Month labels */}
+        <div className="flex ml-8 mb-1.5 text-[9px] text-[var(--color-text-muted)] font-mono" style={{ gap: 0 }}>
+          {monthLabels.map((m, i) => (
+            <span
+              key={i}
+              className="absolute"
+              style={{ left: `${32 + m.idx * 13}px` }}
+            >
+              {m.label}
+            </span>
           ))}
         </div>
 
-        {/* Grid */}
-        <div className="flex gap-[2px]">
-          {weeks.map((week, wIdx) => (
-            <div key={wIdx} className="flex flex-col gap-[2px]">
-              {week.map((cell, dIdx) => (
-                <div
-                  key={dIdx}
-                  className="w-[11px] h-[11px] rounded-[2px] transition-all relative cursor-default"
-                  style={{ background: getColor(cell.count) }}
-                  onMouseEnter={() => setHoveredCell(`${wIdx}-${dIdx}`)}
-                  onMouseLeave={() => setHoveredCell(null)}
-                >
-                  {hoveredCell === `${wIdx}-${dIdx}` && (
-                    <div
-                      className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1.5 rounded-lg text-[10px] font-semibold whitespace-nowrap z-50 pointer-events-none"
-                      style={{
-                        background: "var(--color-base-800)",
-                        border: "1px solid var(--color-border-subtle)",
-                        color: "var(--color-text-primary)",
-                        boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
-                      }}
-                    >
-                      <span className="text-[var(--color-accent-emerald)] font-bold">{cell.count}</span>{" "}
-                      {cell.count === 1 ? "commit" : "commits"} on {cell.date}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          ))}
-        </div>
-      </div>
+        <div className="flex gap-0 mt-5">
+          {/* Day labels */}
+          <div className="flex flex-col gap-[2px] mr-1.5 text-[9px] text-[var(--color-text-muted)] font-mono pt-0">
+            {["", "Mon", "", "Wed", "", "Fri", ""].map((d, i) => (
+              <div key={i} className="h-[11px] flex items-center justify-end w-6">{d}</div>
+            ))}
+          </div>
 
-      {/* Legend */}
-      <div className="flex items-center gap-2 mt-3 justify-end text-[9px] text-[var(--color-text-muted)] font-mono">
-        <span>Less</span>
-        {[0, 0.25, 0.5, 0.75, 1].map((level, i) => (
-          <div
-            key={i}
-            className="w-[11px] h-[11px] rounded-[2px]"
-            style={{ background: level === 0 ? "rgba(255,255,255,0.03)" : `rgba(52, 211, 153, ${0.2 + level * 0.7})` }}
-          />
-        ))}
-        <span>More</span>
+          {/* Grid */}
+          <div className="flex gap-[2px]">
+            {weeks.map((week, wIdx) => (
+              <div key={wIdx} className="flex flex-col gap-[2px]">
+                {week.map((cell, dIdx) => (
+                  <div
+                    key={dIdx}
+                    className="w-[11px] h-[11px] rounded-[2px] transition-all relative cursor-default"
+                    style={{ background: getColor(cell.count) }}
+                    onMouseEnter={() => setHoveredCell(`${wIdx}-${dIdx}`)}
+                    onMouseLeave={() => setHoveredCell(null)}
+                  >
+                    {hoveredCell === `${wIdx}-${dIdx}` && (
+                      <div
+                        className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1.5 rounded-lg text-[10px] font-semibold whitespace-nowrap z-50 pointer-events-none"
+                        style={{
+                          background: "var(--color-base-800)",
+                          border: "1px solid var(--color-border-subtle)",
+                          color: "var(--color-text-primary)",
+                          boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+                        }}
+                      >
+                        <span className="text-[var(--color-accent-emerald)] font-bold">{cell.count}</span>{" "}
+                        {cell.count === 1 ? "commit" : "commits"} on {cell.date}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Legend */}
+        <div className="flex items-center gap-2 mt-3 justify-end text-[9px] text-[var(--color-text-muted)] font-mono">
+          <span>Less</span>
+          {[0, 0.25, 0.5, 0.75, 1].map((level, i) => (
+            <div
+              key={i}
+              className="w-[11px] h-[11px] rounded-[2px]"
+              style={{ background: level === 0 ? "rgba(255,255,255,0.03)" : `rgba(52, 211, 153, ${0.2 + level * 0.7})` }}
+            />
+          ))}
+          <span>More</span>
+        </div>
       </div>
     </div>
   );
@@ -235,7 +237,16 @@ export default function GitVisualizer() {
         fetch(`https://api.github.com/users/${user}/events/public?per_page=30`),
       ]);
 
-      if (!profileRes.ok) throw new Error("GitHub user not found.");
+      if (profileRes.status === 403 || profileRes.status === 429) {
+        throw new Error("GitHub API rate limit exceeded. Please try again in a few minutes.");
+      }
+
+      if (!profileRes.ok) {
+        if (profileRes.status === 404) {
+          throw new Error(`GitHub user "${user}" not found.`);
+        }
+        throw new Error(`Failed to fetch GitHub profile (Status ${profileRes.status}).`);
+      }
 
       const profileData = await profileRes.json();
       const reposData = await reposRes.json();

@@ -22,6 +22,22 @@
   --color-text-primary: #E2E8F0;
   --color-text-secondary: #94A3B8;
   --color-text-muted: #64748B;
+
+  --color-lecture: #6366F1;
+  --color-study: #22D3EE;
+  --color-lab: #34D399;
+  --color-group: #F472B6;
+  --color-revision: #FBBF24;
+  --color-break: #94A3B8;
+  --color-exercise: #FB7185;
+
+  --bg-lecture: rgba(99, 102, 241, 0.15);
+  --bg-study: rgba(34, 211, 238, 0.15);
+  --bg-lab: rgba(52, 211, 153, 0.15);
+  --bg-group: rgba(244, 114, 182, 0.15);
+  --bg-revision: rgba(251, 191, 36, 0.15);
+  --bg-break: rgba(148, 163, 184, 0.15);
+  --bg-exercise: rgba(251, 113, 133, 0.15);
 }
 
 /* ─── Light Theme Overrides ────────────────────────────────────────────────── */
@@ -46,6 +62,22 @@
   --color-text-primary: #1E293B;
   --color-text-secondary: #475569;
   --color-text-muted: #94A3B8;
+
+  --color-lecture: #4F46E5;
+  --color-study: #0891B2;
+  --color-lab: #059669;
+  --color-group: #D01C76;
+  --color-revision: #D97706;
+  --color-break: #475569;
+  --color-exercise: #E11D48;
+
+  --bg-lecture: rgba(79, 70, 229, 0.08);
+  --bg-study: rgba(8, 145, 178, 0.08);
+  --bg-lab: rgba(5, 150, 105, 0.08);
+  --bg-group: rgba(208, 28, 118, 0.08);
+  --bg-revision: rgba(217, 119, 6, 0.08);
+  --bg-break: rgba(71, 85, 105, 0.08);
+  --bg-exercise: rgba(225, 29, 72, 0.08);
 }
 
 /* ─── Base ─────────────────────────────────────────────────────────────────── */

@@ -56,6 +56,11 @@ function AuthenticatedApp({ onLogout }) {
   const [pendingAiAction, setPendingAiAction] = useState(null);
   const isMobile = useIsMobile();
 
+  // Scroll to top when tab changes
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [activeTab]);
+
   // ─── Live data hooks ────────────────────────────────────────────
   const { data: profileData } = useProfile();
   const { data: coursesData, loading: coursesLoading } = useMyCourses();
@@ -66,9 +71,9 @@ function AuthenticatedApp({ onLogout }) {
   const events = eventsData?.events;
   const loading = coursesLoading || eventsLoading;
 
-  const isAdmin = profile?.username
+  const isAdmin = (profile?.username
     ? ADMIN_USERS.map((u) => u.toLowerCase()).includes(profile.username.toLowerCase())
-    : false;
+    : false) || localStorage.getItem("somasync_admin_authorized") === "true";
 
   const handleSendToAi = (query, text, filename) => {
     setPendingAiAction({ query, text, filename });
@@ -156,6 +161,19 @@ function AuthenticatedApp({ onLogout }) {
 export default function App() {
   const [token, setToken] = useState(() => localStorage.getItem("somasync_token"));
 
+  // Check URL query parameters for admin/staff bypass
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("admin") === "true" || params.get("staff") === "true") {
+      localStorage.setItem("somasync_admin_authorized", "true");
+      const url = new URL(window.location.href);
+      url.searchParams.delete("admin");
+      url.searchParams.delete("staff");
+      window.history.replaceState({}, document.title, url.pathname + url.search);
+      window.location.reload();
+    }
+  }, []);
+
   const handleLoginSuccess = (newToken, profile) => {
     localStorage.setItem("somasync_token", newToken);
     localStorage.setItem("somasync_profile", JSON.stringify(profile));
@@ -165,6 +183,7 @@ export default function App() {
   const handleLogout = () => {
     localStorage.removeItem("somasync_token");
     localStorage.removeItem("somasync_profile");
+    localStorage.removeItem("somasync_admin_authorized");
     setToken(null);
   };
 

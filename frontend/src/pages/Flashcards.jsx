@@ -37,6 +37,22 @@ const fallbackCards = [
   { q: "What is Active Recall?", a: "A study method where you stimulate memory by retrieving information from your brain rather than passively re-reading." },
   { q: "Define Spaced Repetition.", a: "A learning technique where flashcards are reviewed at increasing intervals to improve long-term retention." },
   { q: "What is the Feynman Technique?", a: "A learning method where you explain a concept in simple terms as if teaching someone else, identifying gaps in understanding." },
+  { q: "What is Cornell Note-Taking?", a: "A systematic format for condensing and organizing notes by dividing a page into notes, cues, and a summary section." },
+  { q: "Define the Leitner System.", a: "A flashcard review method using multiple boxes where correctly answered cards advance, and incorrect ones return to the first box." },
+  { q: "What is Interleaving?", a: "A study practice where you mix different topics or problem types during a session, rather than focusing on a single topic." },
+  { q: "What is the SQ3R Method?", a: "A reading comprehension method named for its steps: Survey, Question, Read, Recite, and Review." },
+  { q: "Define Dual Coding.", a: "Combining verbal and visual materials (like words and diagrams) to make the information easier to store and recall." },
+  { q: "What is Elaborative Rehearsal?", a: "A memory technique that involves thinking about the meaning of term to be remembered, as opposed to simply repeating it." },
+  { q: "What is the Zeigarnik Effect?", a: "A psychological tendency to remember interrupted or incomplete tasks better than completed ones, highlighting the power of starting." },
+  { q: "Define Metacognition.", a: "The awareness and understanding of one's own thought processes—literally 'thinking about thinking' to assess learning." },
+  { q: "What is Chunking?", a: "The process of taking individual pieces of information and grouping them into larger, meaningful units to improve working memory." },
+  { q: "What is the Curve of Forgetting?", a: "A hypothesis describing the exponential rate at which information is lost from the brain if there is no attempt to retain it." },
+  { q: "Define Mind Mapping.", a: "A visual diagram used to represent tasks, words, concepts, or items linked to and arranged around a central subject." },
+  { q: "What is the Blurting Method?", a: "An active recall study technique where you read a section of text, close the book, and quickly write down everything you remember." },
+  { q: "What is Parkinson's Law?", a: "The adage that 'work expands to fill the time available for its completion,' emphasizing the benefit of setting tighter deadlines." },
+  { q: "Define Cognitive Load.", a: "The total amount of mental effort being used in the working memory, which should be managed to prevent learning fatigue." },
+  { q: "What is Retrieval Practice?", a: "The act of trying to recall information from memory, which strengthens neural pathways and enhances long-term retention." },
+  { q: "What is Spaced Practice?", a: "Distributing study sessions over a longer period of time, rather than cramming them into a single, long session." }
 ];
 
 const getNow = () => Date.now();

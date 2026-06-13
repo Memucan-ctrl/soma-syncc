@@ -39,13 +39,13 @@ const HOURS = Array.from({ length: 16 }, (_, i) => i + 6);
 const STORAGE_KEY = "somasync_study_planner";
 
 const CATEGORIES = [
-  { id: "lecture", label: "Lecture", icon: BookOpen, color: "#6366F1", bg: "rgba(99,102,241,0.15)" },
-  { id: "study", label: "Study", icon: FileText, color: "#22D3EE", bg: "rgba(34,211,238,0.15)" },
-  { id: "lab", label: "Lab", icon: Code, color: "#34D399", bg: "rgba(52,211,153,0.15)" },
-  { id: "group", label: "Group", icon: Users, color: "#F472B6", bg: "rgba(244,114,182,0.15)" },
-  { id: "revision", label: "Revision", icon: Sparkles, color: "#FBBF24", bg: "rgba(251,191,36,0.15)" },
-  { id: "break", label: "Break", icon: Coffee, color: "#94A3B8", bg: "rgba(148,163,184,0.15)" },
-  { id: "exercise", label: "Exercise", icon: Dumbbell, color: "#FB7185", bg: "rgba(251,113,133,0.15)" },
+  { id: "lecture", label: "Lecture", icon: BookOpen, color: "var(--color-lecture)", bg: "var(--bg-lecture)" },
+  { id: "study", label: "Study", icon: FileText, color: "var(--color-study)", bg: "var(--bg-study)" },
+  { id: "lab", label: "Lab", icon: Code, color: "var(--color-lab)", bg: "var(--bg-lab)" },
+  { id: "group", label: "Group", icon: Users, color: "var(--color-group)", bg: "var(--bg-group)" },
+  { id: "revision", label: "Revision", icon: Sparkles, color: "var(--color-revision)", bg: "var(--bg-revision)" },
+  { id: "break", label: "Break", icon: Coffee, color: "var(--color-break)", bg: "var(--bg-break)" },
+  { id: "exercise", label: "Exercise", icon: Dumbbell, color: "var(--color-exercise)", bg: "var(--bg-exercise)" },
 ];
 
 const defaultEvents = () => {
@@ -303,19 +303,18 @@ export default function StudyPlanner() {
           >
             <ChevronLeft size={16} />
           </button>
-          <div className="flex gap-1.5 overflow-x-auto flex-1 mx-3">
+          <div className="flex gap-2 overflow-x-auto flex-1 mx-3 justify-center py-1 scrollbar-none">
             {DAYS.map((d) => (
               <button
                 key={d}
                 onClick={() => setMobileDay(d)}
-                className={`flex-1 min-w-[42px] py-2 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+                className={`flex-shrink-0 w-10 h-10 rounded-full text-[10px] font-bold transition-all cursor-pointer flex items-center justify-center ${
                   mobileDay === d
-                    ? "text-white"
+                    ? "text-white bg-[var(--color-primary)] shadow-md shadow-indigo-500/20"
                     : d === todayKey
-                    ? "text-[var(--color-primary-light)] border border-[var(--color-primary)]"
-                    : "text-[var(--color-text-muted)] border border-[var(--color-border-subtle)]"
+                    ? "text-[var(--color-primary-light)] border border-[var(--color-primary)] bg-[rgba(99,102,241,0.02)]"
+                    : "text-[var(--color-text-secondary)] bg-[var(--color-surface-raised)] border border-[var(--color-border-subtle)] hover:border-[var(--color-border-hover)]"
                 }`}
-                style={mobileDay === d ? { background: "var(--color-primary)" } : {}}
               >
                 {d}
               </button>
@@ -435,6 +434,15 @@ export default function StudyPlanner() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          {/* Add Event (FAB) */}
+          <button
+            onClick={() => openForm(mobileDay)}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[10px] font-semibold text-white bg-[var(--color-primary)] hover:bg-[var(--color-primary-light)] transition-all cursor-pointer shadow-md shadow-indigo-500/10"
+          >
+            <Plus size={12} />
+            Add Event
+          </button>
+
           {/* Bulk mode toggle */}
           <button
             onClick={() => { setBulkMode(!bulkMode); deselectAll(); }}
@@ -525,10 +533,10 @@ export default function StudyPlanner() {
                 {selectedEvents.size} selected
               </span>
               <div className="flex-1" />
-              <button onClick={selectAll} className="text-[10px] px-2.5 py-1.5 rounded-lg border border-[var(--color-border-subtle)] text-[var(--color-text-muted)] hover:text-white cursor-pointer transition-all font-semibold">
+              <button onClick={selectAll} className="text-[10px] px-2.5 py-1.5 rounded-lg border border-[var(--color-border-subtle)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-border-subtle)] cursor-pointer transition-all font-semibold">
                 Select All
               </button>
-              <button onClick={deselectAll} className="text-[10px] px-2.5 py-1.5 rounded-lg border border-[var(--color-border-subtle)] text-[var(--color-text-muted)] hover:text-white cursor-pointer transition-all font-semibold">
+              <button onClick={deselectAll} className="text-[10px] px-2.5 py-1.5 rounded-lg border border-[var(--color-border-subtle)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-border-subtle)] cursor-pointer transition-all font-semibold">
                 Deselect
               </button>
 
@@ -712,7 +720,7 @@ export default function StudyPlanner() {
                 <h3 className="text-sm font-bold text-[var(--color-text-primary)]">
                   {editingId ? "Edit Event" : "New Event"}
                 </h3>
-                <button onClick={resetForm} className="p-1.5 rounded-lg hover:bg-[rgba(255,255,255,0.05)] text-[var(--color-text-muted)] hover:text-white transition-all cursor-pointer">
+                 <button onClick={resetForm} className="p-1.5 rounded-lg hover:bg-[var(--color-border-subtle)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-all cursor-pointer">
                   <X size={16} />
                 </button>
               </div>
@@ -734,7 +742,7 @@ export default function StudyPlanner() {
                     <button
                       key={d}
                       onClick={() => setFormDay(d)}
-                      className="flex-1 text-[10px] font-semibold py-2 rounded-lg border transition-all cursor-pointer"
+                      className="flex-1 text-[10px] font-semibold py-2 rounded-full border transition-all cursor-pointer"
                       style={{
                         background: formDay === d ? "var(--color-primary)" : "transparent",
                         color: formDay === d ? "#fff" : "var(--color-text-muted)",
@@ -792,7 +800,7 @@ export default function StudyPlanner() {
               />
 
               <div className="flex gap-2 justify-end pt-1">
-                <button onClick={resetForm} className="px-4 py-2 rounded-xl text-xs font-semibold text-[var(--color-text-muted)] hover:text-white border border-[var(--color-border-subtle)] transition-all cursor-pointer">
+                 <button onClick={resetForm} className="px-4 py-2 rounded-xl text-xs font-semibold text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-border-subtle)] border border-[var(--color-border-subtle)] transition-all cursor-pointer">
                   Cancel
                 </button>
                 <motion.button

