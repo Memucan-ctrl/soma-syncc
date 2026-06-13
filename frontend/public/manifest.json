@@ -1,0 +1,24 @@
+{
+  "name": "SomaSync",
+  "short_name": "SomaSync",
+  "description": "Elite Edutech platform — Gamified study intelligence with AI-powered learning",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#080A12",
+  "theme_color": "#6366F1",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

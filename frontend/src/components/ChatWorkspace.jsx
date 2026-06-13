@@ -56,7 +56,15 @@ export default function ChatWorkspace({ isOpen, onClose, isPage = false, pending
   const [activeThreadId, setActiveThreadId] = useState(null);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
+  const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth >= 768);
+
+  useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener("resize", handler);
+    return () => window.removeEventListener("resize", handler);
+  }, []);
+
   const messagesEndRef = useRef(null);
 
   // OCR States
@@ -301,13 +309,22 @@ export default function ChatWorkspace({ isOpen, onClose, isPage = false, pending
       <>
         {/* ─── Left Sidebar: Thread History ──────────────────────────── */}
         <AnimatePresence>
+          {sidebarOpen && isMobile && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[98]"
+              onClick={() => setSidebarOpen(false)}
+            />
+          )}
           {sidebarOpen && (
             <motion.div
               initial={{ x: -280, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
               exit={{ x: -280, opacity: 0 }}
               transition={{ type: "spring", damping: 25, stiffness: 250 }}
-              className="w-[280px] h-full flex flex-col border-r border-[var(--color-border-subtle)]"
+              className={`${isMobile ? "fixed inset-y-0 left-0 z-[99]" : "relative"} w-[280px] h-full flex flex-col border-r border-[var(--color-border-subtle)]`}
               style={{ background: "var(--color-base-900)" }}
             >
               {/* Sidebar Header */}

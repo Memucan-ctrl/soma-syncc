@@ -169,7 +169,7 @@ function renderMarkdownContent(text) {
     }
     
     // Multiple choice option: A) option text or A. option text
-    const mcMatch = line.match(/^([A-D])[\)\.]\s+(.*)/);
+    const mcMatch = line.match(/^([A-D])[).]\s+(.*)/);
     if (mcMatch) {
       const optionLetter = mcMatch[1];
       const optionText = mcMatch[2];
@@ -190,7 +190,7 @@ function renderMarkdownContent(text) {
     }
     
     // Bullet item
-    const bulletMatch = line.match(/^([-\*])\s+(.*)/);
+    const bulletMatch = line.match(/^([-*])\s+(.*)/);
     if (bulletMatch) {
       const itemText = bulletMatch[2];
       elements.push(

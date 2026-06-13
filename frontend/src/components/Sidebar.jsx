@@ -1,22 +1,23 @@
 /**
- * SomaSync — Sidebar Navigation (v2 — Premium Design)
+ * SomaSync — Sidebar Navigation (v3 — Theme Toggle + Admin)
  */
 
 import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard,
-  RefreshCw,
   GitBranch,
   Layers,
   CalendarClock,
-  Settings,
   ChevronLeft,
   ChevronRight,
-  Zap,
   LogOut,
   BookOpen,
   Sparkles,
+  Shield,
+  Sun,
+  Moon,
 } from "lucide-react";
+import { useTheme } from "../contexts/ThemeContext";
 
 const navItems = [
   { id: "home", label: "Home", icon: LayoutDashboard },
@@ -27,15 +28,15 @@ const navItems = [
   { id: "timetable", label: "Study Planner", icon: CalendarClock },
 ];
 
-export default function Sidebar({ activeTab, onTabChange, profile, onLogout, collapsed, onToggleCollapse }) {
-
+export default function Sidebar({ activeTab, onTabChange, profile, onLogout, collapsed, onToggleCollapse, isAdmin = false }) {
+  const { theme, toggleTheme } = useTheme();
   const firstName = profile?.lastname?.split(" ")?.[0] || "Student";
 
   return (
     <motion.aside
       animate={{ width: collapsed ? 68 : 240 }}
       transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
-      className="fixed left-0 top-0 h-screen z-50 flex flex-col"
+      className="fixed left-0 top-0 h-screen z-50 hidden md:flex flex-col"
       style={{
         background: "var(--color-base-900)",
         borderRight: "1px solid var(--color-border-subtle)",
@@ -118,10 +119,59 @@ export default function Sidebar({ activeTab, onTabChange, profile, onLogout, col
             </button>
           );
         })}
+
+        {/* Admin nav item */}
+        {isAdmin && (
+          <button
+            onClick={() => onTabChange("admin")}
+            className={`nav-item ${activeTab === "admin" ? "nav-item-active" : ""}`}
+          >
+            <Shield size={17} strokeWidth={activeTab === "admin" ? 2.2 : 1.5} />
+            <AnimatePresence>
+              {!collapsed && (
+                <motion.span
+                  initial={{ opacity: 0, width: 0 }}
+                  animate={{ opacity: 1, width: "auto" }}
+                  exit={{ opacity: 0, width: 0 }}
+                  className="whitespace-nowrap overflow-hidden flex items-center gap-2"
+                >
+                  Admin
+                  <span
+                    className="text-[8px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wider"
+                    style={{ background: "rgba(251,191,36,0.1)", color: "var(--color-accent-amber)", border: "1px solid rgba(251,191,36,0.2)" }}
+                  >
+                    Staff
+                  </span>
+                </motion.span>
+              )}
+            </AnimatePresence>
+          </button>
+        )}
       </nav>
 
       {/* ─── Footer ────────────────────────────────────────────────── */}
       <div className="px-3 pb-4 space-y-1">
+        {/* Theme toggle */}
+        <button
+          onClick={toggleTheme}
+          className="nav-item"
+          title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+        >
+          {theme === "dark" ? <Sun size={17} strokeWidth={1.5} /> : <Moon size={17} strokeWidth={1.5} />}
+          <AnimatePresence>
+            {!collapsed && (
+              <motion.span
+                initial={{ opacity: 0, width: 0 }}
+                animate={{ opacity: 1, width: "auto" }}
+                exit={{ opacity: 0, width: 0 }}
+                className="whitespace-nowrap overflow-hidden"
+              >
+                {theme === "dark" ? "Light Mode" : "Dark Mode"}
+              </motion.span>
+            )}
+          </AnimatePresence>
+        </button>
+
         {!collapsed && profile ? (
           <div className="px-3 py-3 mb-2 rounded-xl flex items-center justify-between gap-2" style={{ background: "rgba(99, 102, 241, 0.05)" }}>
             <div className="min-w-0 flex-1">

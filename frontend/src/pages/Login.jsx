@@ -5,7 +5,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Zap, User, Lock, ArrowRight, ShieldAlert, CheckCircle } from "lucide-react";
+import { User, Lock, ArrowRight, ShieldAlert, CheckCircle } from "lucide-react";
 import { login } from "../services/api";
 
 export default function Login({ onLoginSuccess }) {

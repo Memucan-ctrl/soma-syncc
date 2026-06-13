@@ -1,39 +1,13 @@
 /**
- * SomaSync — Moodle Data Hooks
- * React hooks for live data fetching with loading/error states.
+ * SomaSync — Moodle Data Hooks (v2 — SWR Cached)
+ * React hooks with stale-while-revalidate caching for instant tab switching.
  */
 
 import { useState, useEffect, useCallback } from "react";
 import * as api from "../services/api";
+import { useCachedData } from "./useDataCache";
 
-function useAsyncData(fetchFn, deps = []) {
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
-  const refetch = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await fetchFn();
-      setData(result);
-    } catch (err) {
-      setError(err.message || "Failed to fetch");
-    } finally {
-      setLoading(false);
-    }
-  }, deps);
-
-  useEffect(() => {
-    refetch();
-  }, [refetch]);
-
-  return { data, loading, error, refetch };
-}
-
-export function useProfile() {
-  return useAsyncData(api.fetchProfile);
-}
 
 function isAcademicCourse(course) {
   const name = course.fullname?.toLowerCase().trim() || "";
@@ -58,8 +32,12 @@ function isAcademicCourse(course) {
   return true;
 }
 
+export function useProfile() {
+  return useCachedData("profile", api.fetchProfile, { ttl: 10 * 60 * 1000 }); // 10 min
+}
+
 export function useMyCourses() {
-  const result = useAsyncData(api.fetchMyCourses);
+  const result = useCachedData("my-courses", api.fetchMyCourses, { ttl: 5 * 60 * 1000 });
   if (result.data && Array.isArray(result.data.courses)) {
     return {
       ...result,
@@ -73,19 +51,40 @@ export function useMyCourses() {
 }
 
 export function useUpcomingEvents() {
-  return useAsyncData(api.fetchUpcomingEvents);
+  return useCachedData("upcoming-events", api.fetchUpcomingEvents, { ttl: 3 * 60 * 1000 }); // 3 min
 }
 
 export function useGrades() {
-  return useAsyncData(api.fetchGrades);
+  return useCachedData("grades", api.fetchGrades, { ttl: 10 * 60 * 1000 });
 }
 
 export function useAssignments(courseIds = "") {
-  return useAsyncData(() => api.fetchAssignments(courseIds), [courseIds]);
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const refetch = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await api.fetchAssignments(courseIds);
+      setData(result);
+    } catch (err) {
+      setError(err.message || "Failed to fetch");
+    } finally {
+      setLoading(false);
+    }
+  }, [courseIds]);
+
+  useEffect(() => {
+    refetch();
+  }, [refetch]);
+
+  return { data, loading, error, refetch };
 }
 
 export function useRecentCourses() {
-  const result = useAsyncData(api.fetchRecentCourses);
+  const result = useCachedData("recent-courses", api.fetchRecentCourses, { ttl: 5 * 60 * 1000 });
   if (result.data && Array.isArray(result.data.courses)) {
     return {
       ...result,
@@ -99,5 +98,5 @@ export function useRecentCourses() {
 }
 
 export function useNotifications() {
-  return useAsyncData(api.fetchNotifications);
+  return useCachedData("notifications", api.fetchNotifications, { ttl: 2 * 60 * 1000 }); // 2 min
 }

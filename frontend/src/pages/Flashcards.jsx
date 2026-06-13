@@ -4,10 +4,9 @@
  * Caches in localStorage. Shows completion screen with topic recommendations.
  */
 
-import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState } from "react";
+import { motion } from "framer-motion";
 import {
-  Layers,
   ChevronLeft,
   ChevronRight,
   RotateCw,
@@ -16,7 +15,6 @@ import {
   Loader2,
   Sparkles,
   RefreshCw,
-  BookOpen,
   Trophy,
   Target,
   ArrowRight,
@@ -40,6 +38,8 @@ const fallbackCards = [
   { q: "Define Spaced Repetition.", a: "A learning technique where flashcards are reviewed at increasing intervals to improve long-term retention." },
   { q: "What is the Feynman Technique?", a: "A learning method where you explain a concept in simple terms as if teaching someone else, identifying gaps in understanding." },
 ];
+
+const getNow = () => Date.now();
 
 export default function Flashcards() {
   const { data: coursesData } = useMyCourses();
@@ -109,7 +109,7 @@ export default function Flashcards() {
 
       if (parsed.length > 0) {
         setCards(parsed);
-        cache[course.id] = { cards: parsed, generatedAt: Date.now() };
+        cache[course.id] = { cards: parsed, generatedAt: getNow() };
         saveCache(cache);
       } else {
         setCards(fallbackCards);

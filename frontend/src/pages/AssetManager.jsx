@@ -7,11 +7,8 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Layers,
-  BookOpen,
   FileText,
   Link2,
-  Sparkles,
   Send,
   Loader2,
   FolderOpen,
@@ -412,14 +409,20 @@ export default function AssetManager() {
       {/* ─── Right Panel: Collapsible AI Chat ─────────────────────── */}
       <AnimatePresence>
         {aiPanelOpen && selectedCourse && (
-          <motion.div
-            initial={{ width: 0, opacity: 0 }}
-            animate={{ width: "45%", opacity: 1 }}
-            exit={{ width: 0, opacity: 0 }}
-            transition={{ type: "spring", damping: 25, stiffness: 250 }}
-            className="hidden lg:flex flex-col min-w-0"
-          >
-            <div className="card flex-1 flex flex-col min-h-[420px] max-h-[calc(100vh-140px)] overflow-hidden shadow-xl bg-[rgba(17,21,36,0.6)] border-[var(--color-border-subtle)]">
+          <>
+            {/* Mobile Backdrop overlay */}
+            <div
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
+              onClick={() => setAiPanelOpen(false)}
+            />
+            <motion.div
+              initial={window.innerWidth < 1024 ? { y: "100%" } : { width: 0, opacity: 0 }}
+              animate={window.innerWidth < 1024 ? { y: 0 } : { width: "45%", opacity: 1 }}
+              exit={window.innerWidth < 1024 ? { y: "100%" } : { width: 0, opacity: 0 }}
+              transition={{ type: "spring", damping: 28, stiffness: 280 }}
+              className="fixed inset-x-0 bottom-0 top-[10%] rounded-t-3xl lg:rounded-none z-50 lg:relative lg:inset-auto lg:z-auto flex flex-col min-w-0"
+            >
+              <div className="card flex-1 flex flex-col h-full lg:min-h-[420px] lg:max-h-[calc(100vh-140px)] overflow-hidden shadow-xl bg-[rgba(17,21,36,0.9)] lg:bg-[rgba(17,21,36,0.6)] border-[var(--color-border-subtle)]">
               {/* Header */}
               <div className="px-4 py-3 border-b border-[var(--color-border-subtle)] flex items-center justify-between bg-[var(--color-base-900)]">
                 <div className="flex items-center gap-2">
@@ -514,6 +517,7 @@ export default function AssetManager() {
               </div>
             </div>
           </motion.div>
+          </>
         )}
       </AnimatePresence>
 

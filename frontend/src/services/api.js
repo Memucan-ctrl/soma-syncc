@@ -151,3 +151,37 @@ export async function generateFlashcards(courseCode, context) {
     }),
   });
 }
+
+// ─── Admin ─────────────────────────────────────────────────────────────────────
+
+export async function fetchAdminHealth() {
+  return apiFetch("/api/admin/health");
+}
+
+export async function fetchAdminSettings() {
+  return apiFetch("/api/admin/settings");
+}
+
+export async function updateAdminSettings(flags) {
+  return apiFetch("/api/admin/settings", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(flags),
+  });
+}
+
+export async function fetchAiStudyPlan(courses, events) {
+  return apiFetch("/ai/study-plan", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ courses, events }),
+  });
+}
+
+export async function fetchWeeklySummary(courses, events) {
+  return apiFetch("/ai/weekly-summary", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ courses, events }),
+  });
+}
