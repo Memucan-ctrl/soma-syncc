@@ -291,7 +291,7 @@ export default function StudyPlanner() {
     const dayEvents = (events[mobileDay] || []).sort((a, b) => a.time.localeCompare(b.time));
 
     return (
-      <div className="space-y-4 md:hidden">
+      <div className="space-y-4 md:hidden pb-4">
         {/* Day Selector */}
         <div className="flex items-center justify-between">
           <button
@@ -567,7 +567,7 @@ export default function StudyPlanner() {
       {renderMobileDayView()}
 
       {/* ─── Desktop Weekly Grid ──────────────────────────────────── */}
-      <div className="card overflow-hidden hidden md:block" style={{ background: "rgba(17,21,36,0.4)" }}>
+      <div className="card overflow-hidden hidden md:block">
         <div className="overflow-x-auto">
           <div className="min-w-[800px] relative">
             {/* Day headers */}
@@ -604,7 +604,7 @@ export default function StudyPlanner() {
 
             {/* Time grid rows */}
             {HOURS.map((hour) => (
-              <div key={hour} className="grid grid-cols-[60px_repeat(7,1fr)] border-b border-[rgba(255,255,255,0.02)]">
+              <div key={hour} className="grid grid-cols-[60px_repeat(7,1fr)] border-b border-[var(--color-border-subtle)] border-opacity-30">
                 <div className="p-2 text-[10px] text-[var(--color-text-muted)] font-mono text-right pr-3 pt-3">
                   {hour > 12 ? `${hour - 12} PM` : hour === 12 ? "12 PM" : `${hour} AM`}
                 </div>
@@ -697,7 +697,7 @@ export default function StudyPlanner() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-[100] flex items-center justify-center p-4"
-            style={{ background: "rgba(4,6,14,0.8)", backdropFilter: "blur(6px)" }}
+            style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(6px)" }}
             onClick={() => resetForm()}
           >
             <motion.div

@@ -32,7 +32,7 @@ export default function CourseRoster({ courses, loading, onRefetch }) {
         </div>
         <div className="space-y-3">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="flex items-center gap-3 p-3 rounded-xl" style={{ background: "rgba(17,21,36,0.5)" }}>
+            <div key={i} className="flex items-center gap-3 p-3 rounded-xl" style={{ background: "var(--color-surface-raised)" }}>
               <Skeleton className="w-1 h-10 rounded-full" />
               <div className="flex-1 space-y-2">
                 <Skeleton className="h-3 w-3/4" />
@@ -84,7 +84,7 @@ export default function CourseRoster({ courses, loading, onRefetch }) {
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: i * 0.04, duration: 0.35 }}
               className="group flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all"
-              style={{ background: "rgba(17, 21, 36, 0.5)" }}
+              style={{ background: "var(--color-surface-raised)" }}
             >
               <div
                 className="w-1 self-stretch rounded-full flex-shrink-0"

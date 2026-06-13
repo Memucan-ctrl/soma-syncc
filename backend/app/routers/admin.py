@@ -6,7 +6,7 @@ System health, feature flags, and monitoring endpoints.
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-router = APIRouter(prefix="/api/admin", tags=["Admin"])
+router = APIRouter(prefix="/admin", tags=["Admin"])
 
 
 class FeatureFlags(BaseModel):

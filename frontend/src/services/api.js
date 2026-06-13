@@ -155,15 +155,15 @@ export async function generateFlashcards(courseCode, context) {
 // ─── Admin ─────────────────────────────────────────────────────────────────────
 
 export async function fetchAdminHealth() {
-  return apiFetch("/api/admin/health");
+  return apiFetch("/admin/health");
 }
 
 export async function fetchAdminSettings() {
-  return apiFetch("/api/admin/settings");
+  return apiFetch("/admin/settings");
 }
 
 export async function updateAdminSettings(flags) {
-  return apiFetch("/api/admin/settings", {
+  return apiFetch("/admin/settings", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(flags),

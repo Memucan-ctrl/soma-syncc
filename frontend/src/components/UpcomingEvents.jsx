@@ -44,7 +44,7 @@ export default function UpcomingEvents({ events, loading }) {
         </div>
         <div className="space-y-3">
           {[1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="p-3 rounded-xl" style={{ background: "rgba(17,21,36,0.5)" }}>
+            <div key={i} className="p-3 rounded-xl" style={{ background: "var(--color-surface-raised)" }}>
               <Skeleton className="h-3 w-3/4 mb-2" />
               <Skeleton className="h-2 w-1/2" />
             </div>
@@ -79,7 +79,7 @@ export default function UpcomingEvents({ events, loading }) {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.04, duration: 0.3 }}
               className="group p-3 rounded-xl transition-all cursor-pointer"
-              style={{ background: "rgba(17, 21, 36, 0.5)" }}
+              style={{ background: "var(--color-surface-raised)" }}
             >
               <div className="flex items-start gap-3">
                 <div

@@ -154,10 +154,17 @@ export default function Sidebar({ activeTab, onTabChange, profile, onLogout, col
         {/* Theme toggle */}
         <button
           onClick={toggleTheme}
-          className="nav-item"
+          className="nav-item group"
           title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
         >
-          {theme === "dark" ? <Sun size={17} strokeWidth={1.5} /> : <Moon size={17} strokeWidth={1.5} />}
+          <motion.div
+            key={theme}
+            initial={{ rotate: -90, opacity: 0 }}
+            animate={{ rotate: 0, opacity: 1 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
+          >
+            {theme === "dark" ? <Sun size={17} strokeWidth={1.5} /> : <Moon size={17} strokeWidth={1.5} />}
+          </motion.div>
           <AnimatePresence>
             {!collapsed && (
               <motion.span

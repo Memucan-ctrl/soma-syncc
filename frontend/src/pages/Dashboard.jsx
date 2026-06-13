@@ -112,7 +112,7 @@ export default function Home({ profile, courses, events, loading, onOpenAi, onSe
         )}
 
         {/* ─── SomaSync AI Quick Workspace ────────────────────────────── */}
-        <div className="card p-4 md:p-5 relative overflow-hidden bg-[rgba(17,21,36,0.4)] border border-[var(--color-border-subtle)]">
+        <div className="card p-4 md:p-5 relative overflow-hidden border border-[var(--color-border-subtle)]">
           <div className="absolute top-0 right-0 w-64 h-64 pointer-events-none opacity-20 hidden md:block"
                style={{
                  background: "radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, transparent 70%)",

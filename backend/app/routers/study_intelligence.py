@@ -9,7 +9,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 import google.generativeai as genai
 
-router = APIRouter(prefix="/api/ai", tags=["Study Intelligence"])
+router = APIRouter(prefix="/ai", tags=["Study Intelligence"])
 
 
 class CourseInfo(BaseModel):
@@ -109,10 +109,11 @@ async def generate_study_plan(payload: StudyPlanRequest):
         response = model.generate_content(prompt)
         
         # Parse output
+        import re
         raw_text = response.text.strip()
-        json_match = raw_text.match(/\{[\s\S]*\}/) if hasattr(raw_text, 'match') else None
+        json_match = re.search(r'\{[\s\S]*\}', raw_text)
         if json_match:
-            data = json.loads(json_match[0])
+            data = json.loads(json_match.group(0))
         else:
             # strip backticks if any
             if raw_text.startswith("```json"):

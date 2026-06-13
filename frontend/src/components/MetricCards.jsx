@@ -71,7 +71,7 @@ export default function MetricCards({ courses, events, loading }) {
   ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
       {cards.map((card, i) => {
         const Icon = card.icon;
         return (
@@ -82,23 +82,24 @@ export default function MetricCards({ courses, events, loading }) {
             transition={{ delay: i * 0.06, duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
             className="metric-card"
           >
-            <div className="flex items-center gap-3 mb-3">
-              <div className="p-2 rounded-lg" style={{ background: card.bgAccent }}>
-                <Icon size={16} style={{ color: card.accent }} />
+            <div className="flex items-center gap-2 md:gap-3 mb-2 md:mb-3">
+              <div className="p-1.5 md:p-2 rounded-lg" style={{ background: card.bgAccent }}>
+                <Icon size={14} className="md:hidden" style={{ color: card.accent }} />
+                <Icon size={16} className="hidden md:block" style={{ color: card.accent }} />
               </div>
-              <span className="text-[11px] font-medium text-[var(--color-text-muted)] uppercase tracking-wider">
+              <span className="text-[9px] md:text-[11px] font-medium text-[var(--color-text-muted)] uppercase tracking-wider leading-tight">
                 {card.label}
               </span>
             </div>
             {loading ? (
               <>
-                <Skeleton className="h-7 w-20 mb-2" />
-                <Skeleton className="h-3 w-36" />
+                <Skeleton className="h-6 md:h-7 w-16 md:w-20 mb-2" />
+                <Skeleton className="h-3 w-24 md:w-36" />
               </>
             ) : (
               <>
-                <p className="text-2xl font-bold text-[var(--color-text-primary)] mb-1">{card.value}</p>
-                <p className="text-xs text-[var(--color-text-secondary)] leading-relaxed truncate">{card.sub}</p>
+                <p className="text-xl md:text-2xl font-bold text-[var(--color-text-primary)] mb-0.5 md:mb-1">{card.value}</p>
+                <p className="text-[10px] md:text-xs text-[var(--color-text-secondary)] leading-relaxed truncate">{card.sub}</p>
               </>
             )}
           </motion.div>
