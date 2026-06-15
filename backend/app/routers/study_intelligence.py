@@ -102,7 +102,7 @@ async def generate_study_plan(payload: StudyPlanRequest):
             "  \"Tue\": [], ... (etc for Mon, Tue, Wed, Thu, Fri, Sat, Sun)\n"
             "}\n"
             "Choose study categories wisely. Notes should include tips for preparing for the specific deadlines. "
-            "Ensure times are between 06:00 and 21:00. Do NOT include markdown styling or any other text than raw JSON."
+            "Ensure times are between 00:00 and 23:59. Do NOT include markdown styling or any other text than raw JSON."
         )
         
         model = genai.GenerativeModel("gemini-2.5-flash")

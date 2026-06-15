@@ -35,7 +35,7 @@ import {
 
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const DAY_FULL = { Mon: "Monday", Tue: "Tuesday", Wed: "Wednesday", Thu: "Thursday", Fri: "Friday", Sat: "Saturday", Sun: "Sunday" };
-const HOURS = Array.from({ length: 16 }, (_, i) => i + 6);
+const HOURS = Array.from({ length: 24 }, (_, i) => i);
 const STORAGE_KEY = "somasync_study_planner";
 
 const CATEGORIES = [
@@ -88,8 +88,7 @@ function getCurrentTimePosition() {
   const now = new Date();
   const h = now.getHours();
   const m = now.getMinutes();
-  if (h < 6 || h > 21) return null;
-  return ((h - 6) + m / 60) / 16 * 100;
+  return (h + m / 60) / 24 * 100;
 }
 
 export default function StudyPlanner() {
@@ -139,7 +138,12 @@ export default function StudyPlanner() {
     setFormDay(day);
     if (hour !== null) {
       setFormTime(`${String(hour).padStart(2, "0")}:00`);
-      setFormEndTime(`${String(hour + 1).padStart(2, "0")}:00`);
+      const nextHour = hour + 1;
+      if (nextHour === 24) {
+        setFormEndTime("23:59");
+      } else {
+        setFormEndTime(`${String(nextHour).padStart(2, "0")}:00`);
+      }
     }
     setShowForm(true);
   };
@@ -434,14 +438,6 @@ export default function StudyPlanner() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          {/* Add Event (FAB) */}
-          <button
-            onClick={() => openForm(mobileDay)}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[10px] font-semibold text-white bg-[var(--color-primary)] hover:bg-[var(--color-primary-light)] transition-all cursor-pointer shadow-md shadow-indigo-500/10"
-          >
-            <Plus size={12} />
-            Add Event
-          </button>
 
           {/* Bulk mode toggle */}
           <button
@@ -614,7 +610,7 @@ export default function StudyPlanner() {
             {HOURS.map((hour) => (
               <div key={hour} className="grid grid-cols-[60px_repeat(7,1fr)] border-b border-[var(--color-border-subtle)] border-opacity-30">
                 <div className="p-2 text-[10px] text-[var(--color-text-muted)] font-mono text-right pr-3 pt-3">
-                  {hour > 12 ? `${hour - 12} PM` : hour === 12 ? "12 PM" : `${hour} AM`}
+                  {hour === 0 ? "12 AM" : hour === 12 ? "12 PM" : hour > 12 ? `${hour - 12} PM` : `${hour} AM`}
                 </div>
 
                 {DAYS.map((day) => {
