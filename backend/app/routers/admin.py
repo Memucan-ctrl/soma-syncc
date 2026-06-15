@@ -6,13 +6,15 @@ System health, feature flags, and monitoring endpoints.
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-router = APIRouter(prefix="/admin", tags=["Admin"])
+router = APIRouter(prefix="/api/admin", tags=["Admin"])
 
 
 class FeatureFlags(BaseModel):
     ai_enabled: bool = True
     flashcards_enabled: bool = True
     ocr_enabled: bool = True
+    dev_tracker_enabled: bool = True
+    timetable_enabled: bool = True
     maintenance_mode: bool = False
 
 

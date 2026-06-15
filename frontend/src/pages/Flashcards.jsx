@@ -4,7 +4,7 @@
  * Caches in localStorage. Shows completion screen with topic recommendations.
  */
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   ChevronLeft,
@@ -66,7 +66,17 @@ export default function Flashcards() {
   const [cards, setCards] = useState(fallbackCards);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
-  const [masteredStatus, setMasteredStatus] = useState({});
+  const [masteredStatus, setMasteredStatus] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("somasync_mastered_status") || "{}");
+    } catch {
+      return {};
+    }
+  });
+
+  useEffect(() => {
+    localStorage.setItem("somasync_mastered_status", JSON.stringify(masteredStatus));
+  }, [masteredStatus]);
   const [generating, setGenerating] = useState(false);
   const [showCompletion, setShowCompletion] = useState(false);
   const [genError, setGenError] = useState(null);

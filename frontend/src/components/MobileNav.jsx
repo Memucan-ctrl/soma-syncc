@@ -30,8 +30,14 @@ const mainTabs = [
   { id: "timetable", label: "Planner", icon: CalendarClock },
 ];
 
-export default function MobileNav({ activeTab, onTabChange, profile, onLogout, isAdmin = false }) {
+export default function MobileNav({ activeTab, onTabChange, profile, onLogout, isAdmin = false, settings = {} }) {
   const [moreOpen, setMoreOpen] = useState(false);
+  const filteredTabs = mainTabs.filter((tab) => {
+    if (tab.id === "ai") return settings.aiEnabled !== false;
+    if (tab.id === "flashcards") return settings.flashcardsEnabled !== false;
+    if (tab.id === "timetable") return settings.timetableEnabled !== false;
+    return true;
+  });
   const { theme, toggleTheme } = useTheme();
   const sheetRef = useRef(null);
 
@@ -105,17 +111,19 @@ export default function MobileNav({ activeTab, onTabChange, profile, onLogout, i
               </button>
             </div>
 
-            <button
-              onClick={() => handleTabChange("git")}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all cursor-pointer ${
-                activeTab === "git"
-                  ? "bg-[rgba(99,102,241,0.1)] text-[var(--color-primary-light)]"
-                  : "text-[var(--color-text-secondary)] hover:bg-[rgba(99,102,241,0.04)]"
-              }`}
-            >
-              <GitBranch size={18} />
-              DevTracker
-            </button>
+            {settings.devTrackerEnabled !== false && (
+              <button
+                onClick={() => handleTabChange("git")}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all cursor-pointer ${
+                  activeTab === "git"
+                    ? "bg-[rgba(99,102,241,0.1)] text-[var(--color-primary-light)]"
+                    : "text-[var(--color-text-secondary)] hover:bg-[rgba(99,102,241,0.04)]"
+                }`}
+              >
+                <GitBranch size={18} />
+                DevTracker
+              </button>
+            )}
 
             <button
               onClick={() => handleTabChange("admin")}
@@ -179,7 +187,7 @@ export default function MobileNav({ activeTab, onTabChange, profile, onLogout, i
           paddingBottom: "env(safe-area-inset-bottom, 0px)",
         }}
       >
-        {mainTabs.map((tab) => {
+        {filteredTabs.map((tab) => {
           const isActive = activeTab === tab.id;
           const Icon = tab.icon;
           return (

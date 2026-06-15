@@ -9,7 +9,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 import google.generativeai as genai
 
-router = APIRouter(prefix="/ai", tags=["Study Intelligence"])
+router = APIRouter(prefix="/api/ai", tags=["Study Intelligence"])
 
 
 class CourseInfo(BaseModel):

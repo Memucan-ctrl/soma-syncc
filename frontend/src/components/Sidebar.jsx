@@ -28,9 +28,17 @@ const navItems = [
   { id: "timetable", label: "Study Planner", icon: CalendarClock },
 ];
 
-export default function Sidebar({ activeTab, onTabChange, profile, onLogout, collapsed, onToggleCollapse, isAdmin = false }) {
+export default function Sidebar({ activeTab, onTabChange, profile, onLogout, collapsed, onToggleCollapse, isAdmin = false, settings = {} }) {
   const { theme, toggleTheme } = useTheme();
   const firstName = profile?.lastname?.split(" ")?.[0] || "Student";
+
+  const filteredItems = navItems.filter((item) => {
+    if (item.id === "ai") return settings.aiEnabled !== false;
+    if (item.id === "flashcards") return settings.flashcardsEnabled !== false;
+    if (item.id === "git") return settings.devTrackerEnabled !== false;
+    if (item.id === "timetable") return settings.timetableEnabled !== false;
+    return true;
+  });
 
   return (
     <motion.aside
@@ -94,7 +102,7 @@ export default function Sidebar({ activeTab, onTabChange, profile, onLogout, col
 
       {/* ─── Nav ───────────────────────────────────────────────────── */}
       <nav className="flex-1 px-3 space-y-0.5">
-        {navItems.map((item) => {
+        {filteredItems.map((item) => {
           const isActive = activeTab === item.id;
           const Icon = item.icon;
           return (

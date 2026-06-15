@@ -16,7 +16,8 @@ import Timetable from "./pages/Timetable";
 import ChatWorkspace from "./components/ChatWorkspace";
 import Admin from "./pages/Admin";
 import { useProfile, useMyCourses, useUpcomingEvents } from "./hooks/useMoodle";
-import { Shield } from "lucide-react";
+import { Shield, AlertTriangle, LogOut } from "lucide-react";
+import { fetchAdminSettings } from "./services/api";
 import "./App.css";
 
 // Admin users — add Moodle usernames here
@@ -107,6 +108,57 @@ function AdminPasswordGate() {
   );
 }
 
+function MaintenancePage({ onLogout }) {
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen p-5" style={{ background: "var(--color-base-950)" }}>
+      {/* Glow effect */}
+      <div
+        className="fixed top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[350px] h-[350px] pointer-events-none opacity-25 animate-pulse"
+        style={{
+          background: "radial-gradient(circle, rgba(245, 158, 11, 0.15) 0%, transparent 70%)",
+          filter: "blur(50px)",
+        }}
+      />
+      
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
+        className="card p-8 text-center max-w-md w-full space-y-6 relative z-10 border-amber-500/20"
+      >
+        <div className="w-16 h-16 rounded-2xl mx-auto flex items-center justify-center bg-amber-500/10 border border-amber-500/20 text-amber-500">
+          <AlertTriangle size={32} />
+        </div>
+        
+        <div className="space-y-2">
+          <h2 className="text-xl font-extrabold tracking-tight text-[var(--color-text-primary)]">
+            System Under Maintenance
+          </h2>
+          <p className="text-xs text-[var(--color-text-muted)] leading-relaxed">
+            SomaSync is currently undergoing scheduled upgrades to improve our AI study planner, flashcards, and overall performance.
+          </p>
+          <p className="text-xs text-[var(--color-text-muted)] leading-relaxed">
+            We apologize for the inconvenience and will be back online shortly!
+          </p>
+        </div>
+
+        <div className="pt-4 border-t border-[var(--color-border-subtle)] flex flex-col gap-3">
+          <p className="text-[10px] text-[var(--color-text-muted)] font-medium uppercase tracking-wider">
+            Are you a staff member or administrator?
+          </p>
+          <button
+            onClick={onLogout}
+            className="w-full py-2.5 rounded-xl text-xs font-semibold border border-[var(--color-border-subtle)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:border-[var(--color-border-hover)] bg-[var(--color-base-900)] hover:bg-[var(--color-base-850)] transition-all cursor-pointer flex items-center justify-center gap-2"
+          >
+            <LogOut size={14} />
+            Log Out & Switch Account
+          </button>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
 function AuthenticatedApp({ onLogout }) {
   const [activeTab, setActiveTab] = useState(() => {
     const pending = localStorage.getItem("somasync_pending_tab");
@@ -119,6 +171,61 @@ function AuthenticatedApp({ onLogout }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [pendingAiAction, setPendingAiAction] = useState(null);
   const isMobile = useIsMobile();
+
+  const [settings, setSettings] = useState(() => {
+    try {
+      return {
+        aiEnabled: true,
+        flashcardsEnabled: true,
+        ocrEnabled: true,
+        devTrackerEnabled: true,
+        timetableEnabled: true,
+        maintenanceMode: false,
+        ...JSON.parse(localStorage.getItem("somasync_admin_settings") || "{}")
+      };
+    } catch {
+      return {
+        aiEnabled: true,
+        flashcardsEnabled: true,
+        ocrEnabled: true,
+        devTrackerEnabled: true,
+        timetableEnabled: true,
+        maintenanceMode: false,
+      };
+    }
+  });
+
+  // Fetch settings on mount
+  useEffect(() => {
+    fetchAdminSettings()
+      .then((flags) => {
+        const mapped = {
+          aiEnabled: flags.ai_enabled,
+          flashcardsEnabled: flags.flashcards_enabled,
+          ocrEnabled: flags.ocr_enabled,
+          devTrackerEnabled: flags.dev_tracker_enabled,
+          timetableEnabled: flags.timetable_enabled,
+          maintenanceMode: flags.maintenance_mode,
+        };
+        localStorage.setItem("somasync_admin_settings", JSON.stringify(mapped));
+        setSettings(mapped);
+      })
+      .catch((err) => console.warn("[App] Could not fetch settings:", err));
+  }, []);
+
+  // Listen for storage events (e.g. settings saved in Admin.jsx)
+  useEffect(() => {
+    const handleStorage = () => {
+      try {
+        const local = JSON.parse(localStorage.getItem("somasync_admin_settings") || "{}");
+        setSettings((prev) => ({ ...prev, ...local }));
+      } catch (e) {
+        console.warn(e);
+      }
+    };
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, []);
 
   // Scroll to top when tab changes
   useEffect(() => {
@@ -136,8 +243,26 @@ function AuthenticatedApp({ onLogout }) {
   const loading = coursesLoading || eventsLoading;
 
   const isAdmin = (profile?.username
-    ? ADMIN_USERS.map((u) => u.toLowerCase()).includes(profile.username.toLowerCase())
+    ? ["admin", ...ADMIN_USERS].map((u) => u.toLowerCase()).includes(profile.username.toLowerCase())
     : false) || localStorage.getItem("somasync_admin_authorized") === "true";
+
+  // Tab Guards: redirect if active tab is disabled
+  useEffect(() => {
+    if (activeTab === "ai" && settings.aiEnabled === false) {
+      setActiveTab("home");
+    } else if (activeTab === "flashcards" && settings.flashcardsEnabled === false) {
+      setActiveTab("home");
+    } else if (activeTab === "git" && settings.devTrackerEnabled === false) {
+      setActiveTab("home");
+    } else if (activeTab === "timetable" && settings.timetableEnabled === false) {
+      setActiveTab("home");
+    }
+  }, [activeTab, settings]);
+
+  // Maintenance bypass / check
+  if (settings.maintenanceMode && !isAdmin) {
+    return <MaintenancePage onLogout={onLogout} />;
+  }
 
   const handleSendToAi = (query, text, filename) => {
     setPendingAiAction({ query, text, filename });
@@ -184,6 +309,7 @@ function AuthenticatedApp({ onLogout }) {
           collapsed={sidebarCollapsed}
           onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
           isAdmin={isAdmin}
+          settings={settings}
         />
       )}
 
@@ -216,6 +342,7 @@ function AuthenticatedApp({ onLogout }) {
           profile={profile}
           onLogout={onLogout}
           isAdmin={isAdmin}
+          settings={settings}
         />
       )}
     </div>
