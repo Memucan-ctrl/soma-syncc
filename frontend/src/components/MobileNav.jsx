@@ -117,25 +117,25 @@ export default function MobileNav({ activeTab, onTabChange, profile, onLogout, i
               DevTracker
             </button>
 
-            {isAdmin && (
-              <button
-                onClick={() => handleTabChange("admin")}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all cursor-pointer ${
-                  activeTab === "admin"
-                    ? "bg-[rgba(99,102,241,0.1)] text-[var(--color-primary-light)]"
-                    : "text-[var(--color-text-secondary)] hover:bg-[rgba(99,102,241,0.04)]"
-                }`}
-              >
-                <Shield size={18} />
-                Admin Panel
+            <button
+              onClick={() => handleTabChange("admin")}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all cursor-pointer ${
+                activeTab === "admin"
+                  ? "bg-[rgba(99,102,241,0.1)] text-[var(--color-primary-light)]"
+                  : "text-[var(--color-text-secondary)] hover:bg-[rgba(99,102,241,0.04)]"
+              }`}
+            >
+              <Shield size={18} />
+              Staff Portal
+              {isAdmin && (
                 <span
                   className="ml-auto text-[8px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wider"
                   style={{ background: "rgba(251,191,36,0.1)", color: "var(--color-accent-amber)", border: "1px solid rgba(251,191,36,0.2)" }}
                 >
                   Staff
                 </span>
-              </button>
-            )}
+              )}
+            </button>
 
             <div className="border-t border-[var(--color-border-subtle)] my-2" />
 

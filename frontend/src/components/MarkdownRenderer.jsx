@@ -77,7 +77,8 @@ function renderInline(text) {
     .replace(/<\/?i>/gi, "")
     .replace(/<\/?p>/gi, "");
     
-  const regex = /(\*\*.*?\*\*|`.*?`)/g;
+  // Match bold (**bold**), code (`code`), or links ([text](url))
+  const regex = /(\*\*.*?\*\*|`.*?`|\[.*?\]\(.*?\))/g;
   const parts = cleaned.split(regex);
   
   return parts.map((part, idx) => {
@@ -95,6 +96,21 @@ function renderInline(text) {
         >
           {part.slice(1, -1)}
         </code>
+      );
+    } else if (part.startsWith("[") && part.includes("](")) {
+      const closeBracket = part.indexOf("](");
+      const linkText = part.slice(1, closeBracket);
+      const linkUrl = part.slice(closeBracket + 2, -1);
+      return (
+        <a
+          key={idx}
+          href={linkUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="text-[var(--color-primary-light)] underline hover:text-[var(--color-primary)] transition-colors inline-flex items-center gap-0.5 font-medium cursor-pointer"
+        >
+          {linkText}
+        </a>
       );
     }
     return part;
@@ -142,7 +158,7 @@ function renderMarkdownContent(text) {
     
     // Horizontal rule
     if (line.trim() === "---") {
-      elements.push(<hr key={i} className="my-3 border-[rgba(255,255,255,0.06)]" />);
+      elements.push(<hr key={i} className="my-3 border-[var(--color-border-subtle)]" />);
       continue;
     }
     
@@ -160,7 +176,7 @@ function renderMarkdownContent(text) {
       elements.push(
         <h4
           key={i}
-          className={`${sizeClass} flex items-center gap-2 border-b border-[rgba(255,255,255,0.03)] pb-1`}
+          className={`${sizeClass} flex items-center gap-2 border-b border-[var(--color-border-subtle)] pb-1`}
         >
           {renderInline(headingText)}
         </h4>
@@ -176,7 +192,7 @@ function renderMarkdownContent(text) {
       elements.push(
         <div
           key={i}
-          className="flex items-start gap-2.5 my-2 pl-2.5 pr-4 py-2 rounded-xl border border-[var(--color-border-subtle)] bg-[rgba(255,255,255,0.01)] hover:bg-[rgba(99,102,241,0.03)] hover:border-[rgba(99,102,241,0.15)] transition-all"
+          className="flex items-start gap-2.5 my-2 pl-2.5 pr-4 py-2 rounded-xl border border-[var(--color-border-subtle)] bg-[rgba(99,102,241,0.01)] hover:bg-[rgba(99,102,241,0.03)] hover:border-[rgba(99,102,241,0.15)] transition-all"
         >
           <span className="flex-shrink-0 w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-bold bg-[rgba(99,102,241,0.08)] text-[var(--color-primary-light)] border border-[rgba(99,102,241,0.15)] font-mono">
             {optionLetter}
@@ -255,7 +271,7 @@ export default function MarkdownRenderer({ content }) {
                   ▼
                 </span>
               </summary>
-              <div className="px-4 py-3.5 border-t border-[var(--color-border-subtle)] bg-[rgba(8,10,18,0.3)]">
+              <div className="px-4 py-3.5 border-t border-[var(--color-border-subtle)] bg-[var(--color-base-900)]">
                 {renderMarkdownContent(seg.body)}
               </div>
             </details>

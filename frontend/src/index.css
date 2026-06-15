@@ -418,3 +418,12 @@
 [data-theme] canvas {
   transition-duration: 0s;
 }
+
+/* ─── Hide scrollbar utility ────────────────────────────────────────────── */
+.scrollbar-none::-webkit-scrollbar {
+  display: none !important;
+}
+.scrollbar-none {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
+}

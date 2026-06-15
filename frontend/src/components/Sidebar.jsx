@@ -121,32 +121,32 @@ export default function Sidebar({ activeTab, onTabChange, profile, onLogout, col
         })}
 
         {/* Admin nav item */}
-        {isAdmin && (
-          <button
-            onClick={() => onTabChange("admin")}
-            className={`nav-item ${activeTab === "admin" ? "nav-item-active" : ""}`}
-          >
-            <Shield size={17} strokeWidth={activeTab === "admin" ? 2.2 : 1.5} />
-            <AnimatePresence>
-              {!collapsed && (
-                <motion.span
-                  initial={{ opacity: 0, width: 0 }}
-                  animate={{ opacity: 1, width: "auto" }}
-                  exit={{ opacity: 0, width: 0 }}
-                  className="whitespace-nowrap overflow-hidden flex items-center gap-2"
-                >
-                  Admin
+        <button
+          onClick={() => onTabChange("admin")}
+          className={`nav-item ${activeTab === "admin" ? "nav-item-active" : ""}`}
+        >
+          <Shield size={17} strokeWidth={activeTab === "admin" ? 2.2 : 1.5} />
+          <AnimatePresence>
+            {!collapsed && (
+              <motion.span
+                initial={{ opacity: 0, width: 0 }}
+                animate={{ opacity: 1, width: "auto" }}
+                exit={{ opacity: 0, width: 0 }}
+                className="whitespace-nowrap overflow-hidden flex items-center gap-2"
+              >
+                Staff Portal
+                {isAdmin && (
                   <span
                     className="text-[8px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wider"
                     style={{ background: "rgba(251,191,36,0.1)", color: "var(--color-accent-amber)", border: "1px solid rgba(251,191,36,0.2)" }}
                   >
                     Staff
                   </span>
-                </motion.span>
-              )}
-            </AnimatePresence>
-          </button>
-        )}
+                )}
+              </motion.span>
+            )}
+          </AnimatePresence>
+        </button>
       </nav>
 
       {/* ─── Footer ────────────────────────────────────────────────── */}

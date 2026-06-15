@@ -303,7 +303,7 @@ export default function StudyPlanner() {
           >
             <ChevronLeft size={16} />
           </button>
-          <div className="flex gap-2 overflow-x-auto flex-1 mx-3 justify-center py-1 scrollbar-none">
+          <div className="flex gap-2 overflow-x-auto flex-1 mx-3 py-1 scrollbar-none justify-start md:justify-center">
             {DAYS.map((d) => (
               <button
                 key={d}

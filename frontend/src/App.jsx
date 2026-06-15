@@ -16,6 +16,7 @@ import Timetable from "./pages/Timetable";
 import ChatWorkspace from "./components/ChatWorkspace";
 import Admin from "./pages/Admin";
 import { useProfile, useMyCourses, useUpcomingEvents } from "./hooks/useMoodle";
+import { Shield } from "lucide-react";
 import "./App.css";
 
 // Admin users — add Moodle usernames here
@@ -50,8 +51,71 @@ function PlaceholderPage({ title, description }) {
   );
 }
 
+function AdminPasswordGate() {
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState(null);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (password === "somasync2026") {
+      localStorage.setItem("somasync_admin_authorized", "true");
+      window.location.reload();
+    } else {
+      setError("Invalid administrator password.");
+    }
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
+      className="flex flex-col items-center justify-center min-h-[60vh]"
+    >
+      <div className="card p-8 text-center max-w-sm w-full space-y-5">
+        <div className="w-12 h-12 rounded-2xl mx-auto flex items-center justify-center bg-[rgba(99,102,241,0.08)] border border-[rgba(99,102,241,0.15)] text-[var(--color-primary-light)]">
+          <Shield size={20} />
+        </div>
+        <div>
+          <h2 className="text-base font-bold text-[var(--color-text-primary)]">Staff Portal Access</h2>
+          <p className="text-xs text-[var(--color-text-muted)] mt-1.5 leading-relaxed">
+            Please enter the administrator password to unlock the admin panel.
+          </p>
+        </div>
+        <form onSubmit={handleSubmit} className="space-y-4 w-full">
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Admin password"
+            className="w-full text-xs py-2.5 px-4 rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-base-950)] text-[var(--color-text-primary)] outline-none focus:border-[var(--color-primary-light)] transition-colors placeholder:text-[var(--color-text-muted)]"
+            autoFocus
+          />
+          {error && (
+            <p className="text-[10px] text-[var(--color-accent-rose)] font-semibold">{error}</p>
+          )}
+          <button
+            type="submit"
+            className="w-full py-2.5 rounded-xl text-xs font-semibold text-white cursor-pointer hover:opacity-95 transition-all"
+            style={{ background: "linear-gradient(135deg, #6366F1, #818CF8)" }}
+          >
+            Authenticate
+          </button>
+        </form>
+      </div>
+    </motion.div>
+  );
+}
+
 function AuthenticatedApp({ onLogout }) {
-  const [activeTab, setActiveTab] = useState("home");
+  const [activeTab, setActiveTab] = useState(() => {
+    const pending = localStorage.getItem("somasync_pending_tab");
+    if (pending) {
+      localStorage.removeItem("somasync_pending_tab");
+      return pending;
+    }
+    return "home";
+  });
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [pendingAiAction, setPendingAiAction] = useState(null);
   const isMobile = useIsMobile();
@@ -104,7 +168,7 @@ function AuthenticatedApp({ onLogout }) {
     flashcards: <Flashcards />,
     timetable: <Timetable />,
     admin: isAdmin ? <Admin /> : (
-      <PlaceholderPage title="Access Denied" description="You don't have admin privileges." />
+      <AdminPasswordGate />
     ),
   };
 
@@ -171,7 +235,20 @@ export default function App() {
       url.searchParams.delete("staff");
       window.history.replaceState({}, document.title, url.pathname + url.search);
       window.location.reload();
+      return;
     }
+
+    const handleHash = () => {
+      const hash = window.location.hash.toLowerCase();
+      if (hash === "#admin" || hash === "#/admin") {
+        localStorage.setItem("somasync_pending_tab", "admin");
+        window.location.hash = ""; // Clear hash
+        window.location.reload();
+      }
+    };
+    handleHash();
+    window.addEventListener("hashchange", handleHash);
+    return () => window.removeEventListener("hashchange", handleHash);
   }, []);
 
   const handleLoginSuccess = (newToken, profile) => {
