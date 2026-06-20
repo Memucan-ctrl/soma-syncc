@@ -25,6 +25,11 @@ class Settings(BaseSettings):
     azure_doc_intelligence_endpoint: str = ""
     azure_doc_intelligence_key: str = ""
 
+    # Twilio
+    twilio_account_sid: str = ""
+    twilio_auth_token: str = ""
+    twilio_phone_number: str = ""
+
     # Server
     port: int = 8000
     environment: str = "development"

@@ -185,3 +185,25 @@ export async function fetchWeeklySummary(courses, events) {
     body: JSON.stringify({ courses, events }),
   });
 }
+
+export async function sendTestWhatsapp(phoneNumber) {
+  return apiFetch("/notifications/test-whatsapp", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ phone_number: phoneNumber }),
+  });
+}
+
+export async function triggerAlertWhatsapp(phoneNumber, weeklyEnabled, urgentEnabled, courses, events) {
+  return apiFetch("/notifications/alert", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      phone_number: phoneNumber,
+      weekly_summary_enabled: weeklyEnabled,
+      urgent_deadline_enabled: urgentEnabled,
+      courses,
+      events,
+    }),
+  });
+}
