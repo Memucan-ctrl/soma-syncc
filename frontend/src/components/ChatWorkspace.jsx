@@ -51,7 +51,7 @@ function timeAgo(ts) {
   return new Date(ts).toLocaleDateString();
 }
 
-export default function ChatWorkspace({ isOpen, onClose, isPage = false, pendingAiAction = null, clearPendingAiAction }) {
+export default function ChatWorkspace({ isOpen, onClose, isPage = false }) {
   const [threads, setThreads] = useState(loadThreads);
   const [activeThreadId, setActiveThreadId] = useState(null);
   const [input, setInput] = useState("");
@@ -94,97 +94,7 @@ export default function ChatWorkspace({ isOpen, onClose, isPage = false, pending
     }
   }, [isOpen, isPage]);
 
-  // Process pending actions from Quick AI Workspace
-  useEffect(() => {
-    if (pendingAiAction) {
-      const { query, text, filename } = pendingAiAction;
-      
-      let threadId = activeThreadId;
-      if (!threadId) {
-        const newThread = {
-          id: `thread-${Date.now()}`,
-          title: query.slice(0, 50) || "File Analysis",
-          messages: [],
-          createdAt: Date.now(),
-          updatedAt: Date.now(),
-        };
-        setThreads((prev) => [newThread, ...prev]);
-        threadId = newThread.id;
-        setActiveThreadId(threadId);
-      }
 
-      const runSend = async () => {
-        const fullContent = text
-          ? `${query}\n\n[Attached File (${filename})]:\n${text}`
-          : query;
-
-        const userMsg = {
-          role: "user",
-          content: query || `Analyzed file: ${filename}`,
-          ts: Date.now(),
-        };
-
-        const history = messages.map(m => ({ role: m.role, content: m.content }));
-
-        setThreads((prev) =>
-          prev.map((t) =>
-            t.id === threadId
-              ? {
-                  ...t,
-                  messages: [...t.messages, userMsg],
-                  title: t.messages.length === 0 ? (query.slice(0, 50) || "File Analysis") : t.title,
-                  updatedAt: Date.now(),
-                }
-              : t
-          )
-        );
-
-        setIsTyping(true);
-        setAttachedText("");
-        setAttachedFileName("");
-        setOcrError(null);
-
-        try {
-          const data = await sendConsultationQuery(fullContent, "", "", history);
-          setThreads((prev) =>
-            prev.map((t) =>
-              t.id === threadId
-                ? {
-                    ...t,
-                    messages: [
-                      ...t.messages.filter(m => m.ts !== userMsg.ts),
-                      userMsg,
-                      { role: "assistant", content: data.response, ts: Date.now() }
-                    ],
-                    updatedAt: Date.now()
-                  }
-                : t
-            )
-          );
-        } catch (err) {
-          setThreads((prev) =>
-            prev.map((t) =>
-              t.id === threadId
-                ? {
-                    ...t,
-                    messages: [
-                      ...t.messages,
-                      { role: "assistant", content: `Error: ${err.message || "Connection failed"}. Please retry.`, ts: Date.now() }
-                    ],
-                    updatedAt: Date.now()
-                  }
-                : t
-            )
-          );
-        } finally {
-          setIsTyping(false);
-        }
-      };
-
-      runSend();
-      clearPendingAiAction();
-    }
-  }, [pendingAiAction]);
 
   const createNewThread = useCallback(() => {
     const newThread = {

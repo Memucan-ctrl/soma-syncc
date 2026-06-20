@@ -134,15 +134,7 @@ export default function MobileNav({ activeTab, onTabChange, profile, onLogout, i
               }`}
             >
               <Shield size={18} />
-              Staff Portal
-              {isAdmin && (
-                <span
-                  className="ml-auto text-[8px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wider"
-                  style={{ background: "rgba(251,191,36,0.1)", color: "var(--color-accent-amber)", border: "1px solid rgba(251,191,36,0.2)" }}
-                >
-                  Staff
-                </span>
-              )}
+              Admin Panel
             </button>
 
             <div className="border-t border-[var(--color-border-subtle)] my-2" />

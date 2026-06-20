@@ -207,3 +207,27 @@ export async function triggerAlertWhatsapp(phoneNumber, weeklyEnabled, urgentEna
     }),
   });
 }
+
+export async function fetchTimetableEvents() {
+  return apiFetch("/ai/events");
+}
+
+export async function saveTimetableEvents(events) {
+  return apiFetch("/ai/events", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ events }),
+  });
+}
+
+export async function fetchNotificationSettings() {
+  return apiFetch("/notifications/settings");
+}
+
+export async function saveNotificationSettings(settings) {
+  return apiFetch("/notifications/settings", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(settings),
+  });
+}

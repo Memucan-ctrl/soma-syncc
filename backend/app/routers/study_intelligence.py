@@ -5,9 +5,10 @@ Generates customized study plans and weekly insights based on course load and Mo
 
 import os
 import json
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Header
 from pydantic import BaseModel
 import google.generativeai as genai
+from app.routers.moodle import extract_token, get_userid
 
 router = APIRouter(prefix="/api/ai", tags=["Study Intelligence"])
 
@@ -32,11 +33,14 @@ class StudyPlanRequest(BaseModel):
 
 
 class TimetableEvent(BaseModel):
+    id: str | None = None
     title: str
     time: str
     endTime: str
     category: str
     notes: str
+    reminder_enabled: bool = True
+    reminder_lead_time_mins: int = 60
 
 
 class StudyPlanResponse(BaseModel):
@@ -63,24 +67,87 @@ async def generate_study_plan(payload: StudyPlanRequest):
         # High-fidelity mock study planner populated with course-specific slots
         mock_plan = {
             "Mon": [
-                {"title": "Revision: " + (payload.courses[0].shortname.split("M26")[0] if payload.courses else "Core Topics"), "time": "08:30", "endTime": "10:30", "category": "revision", "notes": "Focus on foundational concepts and previous assignment reviews."},
-                {"title": "Study Session", "time": "14:00", "endTime": "15:30", "category": "study", "notes": "Work on upcoming deadline prep."}
+                {
+                    "id": "mon_rev_1",
+                    "title": "Revision: " + (payload.courses[0].shortname.split("M26")[0] if payload.courses else "Core Topics"),
+                    "time": "08:30",
+                    "endTime": "10:30",
+                    "category": "revision",
+                    "notes": "Focus on foundational concepts and previous assignment reviews.",
+                    "reminder_enabled": True,
+                    "reminder_lead_time_mins": 60
+                },
+                {
+                    "id": "mon_study_2",
+                    "title": "Study Session",
+                    "time": "14:00",
+                    "endTime": "15:30",
+                    "category": "study",
+                    "notes": "Work on upcoming deadline prep.",
+                    "reminder_enabled": True,
+                    "reminder_lead_time_mins": 60
+                }
             ],
             "Tue": [
-                {"title": "Practice Lab: " + (payload.courses[1].shortname.split("M26")[0] if len(payload.courses) > 1 else "Skills Prep"), "time": "10:00", "endTime": "12:00", "category": "lab", "notes": "Implement sample code or exercises."}
+                {
+                    "id": "tue_lab_1",
+                    "title": "Practice Lab: " + (payload.courses[1].shortname.split("M26")[0] if len(payload.courses) > 1 else "Skills Prep"),
+                    "time": "10:00",
+                    "endTime": "12:00",
+                    "category": "lab",
+                    "notes": "Implement sample code or exercises.",
+                    "reminder_enabled": True,
+                    "reminder_lead_time_mins": 60
+                }
             ],
             "Wed": [
-                {"title": "Group Discussion", "time": "09:00", "endTime": "11:00", "category": "group", "notes": "Review tough sections with peers."}
+                {
+                    "id": "wed_group_1",
+                    "title": "Group Discussion",
+                    "time": "09:00",
+                    "endTime": "11:00",
+                    "category": "group",
+                    "notes": "Review tough sections with peers.",
+                    "reminder_enabled": True,
+                    "reminder_lead_time_mins": 60
+                }
             ],
             "Thu": [
-                {"title": "Deep Study", "time": "15:00", "endTime": "17:00", "category": "study", "notes": "Uninterrupted reading and flashcard review."}
+                {
+                    "id": "thu_study_1",
+                    "title": "Deep Study",
+                    "time": "15:00",
+                    "endTime": "17:00",
+                    "category": "study",
+                    "notes": "Uninterrupted reading and flashcard review.",
+                    "reminder_enabled": True,
+                    "reminder_lead_time_mins": 60
+                }
             ],
             "Fri": [
-                {"title": "Revision: General", "time": "14:00", "endTime": "16:00", "category": "revision", "notes": "Wrap up week's lecture concepts."}
+                {
+                    "id": "fri_rev_1",
+                    "title": "Revision: General",
+                    "time": "14:00",
+                    "endTime": "16:00",
+                    "category": "revision",
+                    "notes": "Wrap up week's lecture concepts.",
+                    "reminder_enabled": True,
+                    "reminder_lead_time_mins": 60
+                }
             ],
             "Sat": [],
             "Sun": [
-                {"title": "Weekly Prep", "time": "10:00", "endTime": "11:00", "category": "break", "notes": "Organize schedules for the next week."}
+                {
+                    "id": "sun_prep_1",
+                    "title": "Weekly Prep",
+                    "time": "10:00",
+                    "endTime": "11:00",
+                    "category": "break",
+                    "notes": "Organize schedules for the next week.",
+                    "reminder_enabled": True,
+                    "reminder_lead_time_mins": 60
+                }
             ]
         }
         return StudyPlanResponse(events=mock_plan)
@@ -98,11 +165,14 @@ async def generate_study_plan(payload: StudyPlanRequest):
             "Generate an optimized, structured weekly study plan matching these inputs. "
             "Return ONLY a valid JSON object matching this schema:\n"
             "{\n"
-            "  \"Mon\": [ { \"title\": \"...\", \"time\": \"HH:MM\", \"endTime\": \"HH:MM\", \"category\": \"study|revision|lab|group|break\", \"notes\": \"...\" } ],\n"
+            "  \"Mon\": [ { \"id\": \"unique_string\", \"title\": \"...\", \"time\": \"HH:MM\", \"endTime\": \"HH:MM\", \"category\": \"study|revision|lab|group|break\", \"notes\": \"...\", \"reminder_enabled\": true, \"reminder_lead_time_mins\": 60 } ],\n"
             "  \"Tue\": [], ... (etc for Mon, Tue, Wed, Thu, Fri, Sat, Sun)\n"
             "}\n"
-            "Choose study categories wisely. Notes should include tips for preparing for the specific deadlines. "
-            "Ensure times are between 00:00 and 23:59. Do NOT include markdown styling or any other text than raw JSON."
+            "Important instructions:\n"
+            "1. Each event MUST have a unique string value for \"id\" (e.g. \"mon_study_1\", \"tue_revision_2\", or random format).\n"
+            "2. Ensure \"reminder_enabled\" defaults to true and \"reminder_lead_time_mins\" to 60.\n"
+            "3. Choose study categories wisely. Notes should include tips for preparing for the specific deadlines. "
+            "4. Ensure times are between 00:00 and 23:59. Do NOT include markdown styling or any other text than raw JSON."
         )
         
         model = genai.GenerativeModel("gemini-2.5-flash")
@@ -126,6 +196,16 @@ async def generate_study_plan(payload: StudyPlanRequest):
         for day in ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]:
             if day not in data:
                 data[day] = []
+            else:
+                # Add default fields if they are missing
+                import uuid
+                for event in data[day]:
+                    if "id" not in event or not event["id"]:
+                        event["id"] = f"{day.lower()}_{uuid.uuid4().hex[:6]}"
+                    if "reminder_enabled" not in event:
+                        event["reminder_enabled"] = True
+                    if "reminder_lead_time_mins" not in event:
+                        event["reminder_lead_time_mins"] = 60
                 
         return StudyPlanResponse(events=data)
     except Exception as e:
@@ -176,3 +256,57 @@ async def generate_weekly_summary(payload: WeeklySummaryRequest):
         return WeeklySummaryResponse(summary=response.text)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+STORAGE_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "storage")
+
+@router.get("/events", response_model=StudyPlanResponse)
+async def get_events(authorization: str = Header(...)):
+    """
+    Get the persisted weekly study plan events for the authenticated Moodle user.
+    """
+    try:
+        token = extract_token(authorization)
+        userid = await get_userid(token)
+    except Exception as e:
+        raise HTTPException(status_code=401, detail=f"Authentication failed: {str(e)}")
+        
+    file_path = os.path.join(STORAGE_DIR, f"events_{userid}.json")
+    if os.path.exists(file_path):
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            # Ensure all days are represented
+            for day in ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]:
+                if day not in data:
+                    data[day] = []
+            return StudyPlanResponse(events=data)
+        except Exception as e:
+            print(f"[!] Error reading events_{userid}.json: {e}")
+            
+    # Default return if no file exists
+    return StudyPlanResponse(events={
+        "Mon": [], "Tue": [], "Wed": [], "Thu": [], "Fri": [], "Sat": [], "Sun": []
+    })
+
+@router.post("/events")
+async def save_events(payload: StudyPlanResponse, authorization: str = Header(...)):
+    """
+    Persist weekly study plan events for the authenticated Moodle user.
+    """
+    try:
+        token = extract_token(authorization)
+        userid = await get_userid(token)
+    except Exception as e:
+        raise HTTPException(status_code=401, detail=f"Authentication failed: {str(e)}")
+        
+    os.makedirs(STORAGE_DIR, exist_ok=True)
+    file_path = os.path.join(STORAGE_DIR, f"events_{userid}.json")
+    try:
+        # Convert Pydantic models to dict/JSON
+        serialized_data = {day: [event.dict() for event in events_list] for day, events_list in payload.events.items()}
+        with open(file_path, "w", encoding="utf-8") as f:
+            json.dump(serialized_data, f, indent=2, ensure_ascii=False)
+        return {"status": "success", "message": "Events saved successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to save events: {str(e)}")

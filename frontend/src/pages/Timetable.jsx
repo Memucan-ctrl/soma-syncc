@@ -26,12 +26,15 @@ import {
   ChevronLeft,
   ChevronRight,
   AlertTriangle,
+  Bell,
+  Loader2,
 } from "lucide-react";
 import {
   generateICSCalendar,
   generateGoogleCalendarUrl,
   downloadICS,
 } from "../utils/icsGenerator";
+import { fetchTimetableEvents, saveTimetableEvents } from "../services/api";
 
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const DAY_FULL = { Mon: "Monday", Tue: "Tuesday", Wed: "Wednesday", Thu: "Thursday", Fri: "Friday", Sat: "Saturday", Sun: "Sunday" };
@@ -55,15 +58,15 @@ const defaultEvents = () => {
   }
   return {
     Mon: [
-      { id: "s1", title: "Database Systems", time: "08:30", endTime: "10:30", category: "lecture", notes: "" },
-      { id: "s2", title: "System Analysis Review", time: "14:00", endTime: "15:30", category: "revision", notes: "" },
+      { id: "s1", title: "Database Systems", time: "08:30", endTime: "10:30", category: "lecture", notes: "", reminder_enabled: true, reminder_lead_time_mins: 60 },
+      { id: "s2", title: "System Analysis Review", time: "14:00", endTime: "15:30", category: "revision", notes: "", reminder_enabled: true, reminder_lead_time_mins: 60 },
     ],
-    Tue: [{ id: "s3", title: "Operating Systems Lab", time: "10:00", endTime: "12:00", category: "lab", notes: "" }],
-    Wed: [{ id: "s4", title: "Electronics Study Group", time: "09:00", endTime: "11:00", category: "group", notes: "" }],
+    Tue: [{ id: "s3", title: "Operating Systems Lab", time: "10:00", endTime: "12:00", category: "lab", notes: "", reminder_enabled: true, reminder_lead_time_mins: 60 }],
+    Wed: [{ id: "s4", title: "Electronics Study Group", time: "09:00", endTime: "11:00", category: "group", notes: "", reminder_enabled: true, reminder_lead_time_mins: 60 }],
     Thu: [],
-    Fri: [{ id: "s5", title: "HCI Lecture", time: "14:00", endTime: "16:00", category: "lecture", notes: "" }],
-    Sat: [{ id: "s6", title: "Weekend Revision", time: "10:00", endTime: "13:00", category: "study", notes: "" }],
-    Sun: [{ id: "s7", title: "Rest & Recharge", time: "10:00", endTime: "11:00", category: "break", notes: "" }],
+    Fri: [{ id: "s5", title: "HCI Lecture", time: "14:00", endTime: "16:00", category: "lecture", notes: "", reminder_enabled: true, reminder_lead_time_mins: 60 }],
+    Sat: [{ id: "s6", title: "Weekend Revision", time: "10:00", endTime: "13:00", category: "study", notes: "", reminder_enabled: true, reminder_lead_time_mins: 60 }],
+    Sun: [{ id: "s7", title: "Rest & Recharge", time: "10:00", endTime: "11:00", category: "break", notes: "", reminder_enabled: true, reminder_lead_time_mins: 60 }],
   };
 };
 
@@ -93,6 +96,7 @@ function getCurrentTimePosition() {
 
 export default function StudyPlanner() {
   const [events, setEvents] = useState(defaultEvents);
+  const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [formDay, setFormDay] = useState("Mon");
@@ -101,6 +105,19 @@ export default function StudyPlanner() {
   const [formEndTime, setFormEndTime] = useState("10:00");
   const [formCategory, setFormCategory] = useState("study");
   const [formNotes, setFormNotes] = useState("");
+  const [formReminderEnabled, setFormReminderEnabled] = useState(true);
+  const [formReminderLeadTimeMins, setFormReminderLeadTimeMins] = useState(60);
+  const [isCustomLeadTime, setIsCustomLeadTime] = useState(false);
+  const [customLeadTimeValue, setCustomLeadTimeValue] = useState(60);
+  const [customLeadTimeUnit, setCustomLeadTimeUnit] = useState("minutes");
+
+  const updateCustomMins = (value, unit) => {
+    let factor = 1;
+    if (unit === "hours") factor = 60;
+    else if (unit === "days") factor = 1440;
+    setFormReminderLeadTimeMins(value * factor);
+  };
+
 
   // Bulk actions
   const [selectedEvents, setSelectedEvents] = useState(new Set());
@@ -117,6 +134,28 @@ export default function StudyPlanner() {
   // Current time indicator
   const [timePos, setTimePos] = useState(getCurrentTimePosition);
 
+  // Fetch timetable events from backend
+  useEffect(() => {
+    let active = true;
+    const loadEvents = async () => {
+      try {
+        const data = await fetchTimetableEvents();
+        if (active && data && data.events) {
+          setEvents(data.events);
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(data.events));
+        }
+      } catch (err) {
+        console.warn("[Timetable] Failed to load events from backend, using cached events:", err);
+      } finally {
+        if (active) setLoading(false);
+      }
+    };
+    loadEvents();
+    return () => {
+      active = false;
+    };
+  }, []);
+
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
   }, [events]);
@@ -128,9 +167,24 @@ export default function StudyPlanner() {
     return () => clearInterval(interval);
   }, []);
 
+  const updateAndSyncEvents = async (updatedEvents) => {
+    setEvents(updatedEvents);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedEvents));
+    try {
+      await saveTimetableEvents(updatedEvents);
+    } catch (err) {
+      console.error("[Timetable] Failed to sync timetable events to backend:", err);
+    }
+  };
+
   const resetForm = () => {
     setFormTitle(""); setFormTime("09:00"); setFormEndTime("10:00");
-    setFormCategory("study"); setFormNotes(""); setEditingId(null); setShowForm(false);
+    setFormCategory("study"); setFormNotes(""); setEditingId(null);
+    setFormReminderEnabled(true); setFormReminderLeadTimeMins(60);
+    setIsCustomLeadTime(false);
+    setCustomLeadTimeValue(60);
+    setCustomLeadTimeUnit("minutes");
+    setShowForm(false);
   };
 
   const openForm = (day, hour = null) => {
@@ -157,18 +211,17 @@ export default function StudyPlanner() {
       endTime: formEndTime,
       category: formCategory,
       notes: formNotes.trim(),
+      reminder_enabled: formReminderEnabled,
+      reminder_lead_time_mins: formReminderLeadTimeMins,
     };
-    setEvents((prev) => {
-      const dayEvents = [...(prev[formDay] || [])];
-      if (editingId) {
-        const idx = dayEvents.findIndex((e) => e.id === editingId);
-        if (idx !== -1) dayEvents[idx] = eventObj;
-      } else {
-        dayEvents.push(eventObj);
-      }
-      dayEvents.sort((a, b) => a.time.localeCompare(b.time));
-      return { ...prev, [formDay]: dayEvents };
+    const nextEvents = {};
+    DAYS.forEach((d) => {
+      nextEvents[d] = (events[d] || []).filter((e) => e.id !== eventObj.id);
     });
+    nextEvents[formDay] = [...(nextEvents[formDay] || []), eventObj].sort((a, b) =>
+      a.time.localeCompare(b.time)
+    );
+    updateAndSyncEvents(nextEvents);
     resetForm();
   };
 
@@ -179,12 +232,39 @@ export default function StudyPlanner() {
     setFormEndTime(event.endTime || "");
     setFormCategory(event.category);
     setFormNotes(event.notes || "");
+    const rEnabled = event.reminder_enabled !== false;
+    setFormReminderEnabled(rEnabled);
+    
+    const leadTime = event.reminder_lead_time_mins || 60;
+    const presets = [15, 30, 60, 120, 1440];
+    if (presets.includes(leadTime)) {
+      setIsCustomLeadTime(false);
+      setFormReminderLeadTimeMins(leadTime);
+    } else {
+      setIsCustomLeadTime(true);
+      if (leadTime % 1440 === 0) {
+        setCustomLeadTimeValue(leadTime / 1440);
+        setCustomLeadTimeUnit("days");
+      } else if (leadTime % 60 === 0) {
+        setCustomLeadTimeValue(leadTime / 60);
+        setCustomLeadTimeUnit("hours");
+      } else {
+        setCustomLeadTimeValue(leadTime);
+        setCustomLeadTimeUnit("minutes");
+      }
+      setFormReminderLeadTimeMins(leadTime);
+    }
+    
     setEditingId(event.id);
     setShowForm(true);
   };
 
   const handleDelete = (day, eventId) => {
-    setEvents((prev) => ({ ...prev, [day]: (prev[day] || []).filter((e) => e.id !== eventId) }));
+    const nextEvents = {
+      ...events,
+      [day]: (events[day] || []).filter((e) => e.id !== eventId),
+    };
+    updateAndSyncEvents(nextEvents);
     setSelectedEvents((prev) => { const next = new Set(prev); next.delete(`${day}-${eventId}`); return next; });
   };
 
@@ -210,56 +290,54 @@ export default function StudyPlanner() {
   const deselectAll = () => setSelectedEvents(new Set());
 
   const bulkDelete = () => {
-    setEvents((prev) => {
-      const next = { ...prev };
-      DAYS.forEach((day) => {
-        next[day] = (next[day] || []).filter((e) => !selectedEvents.has(`${day}-${e.id}`));
-      });
-      return next;
+    const nextEvents = { ...events };
+    DAYS.forEach((day) => {
+      nextEvents[day] = (nextEvents[day] || []).filter((e) => !selectedEvents.has(`${day}-${e.id}`));
     });
+    updateAndSyncEvents(nextEvents);
     setSelectedEvents(new Set());
     setBulkMode(false);
   };
 
   const bulkChangeCategory = (newCat) => {
-    setEvents((prev) => {
-      const next = { ...prev };
-      DAYS.forEach((day) => {
-        next[day] = (next[day] || []).map((e) =>
-          selectedEvents.has(`${day}-${e.id}`) ? { ...e, category: newCat } : e
-        );
-      });
-      return next;
+    const nextEvents = { ...events };
+    DAYS.forEach((day) => {
+      nextEvents[day] = (nextEvents[day] || []).map((e) =>
+        selectedEvents.has(`${day}-${e.id}`) ? { ...e, category: newCat } : e
+      );
     });
+    updateAndSyncEvents(nextEvents);
   };
 
   const bulkMoveToDay = (targetDay) => {
-    setEvents((prev) => {
-      const copy = JSON.parse(JSON.stringify(prev));
-      selectedEvents.forEach((selKey) => {
-        const [day, id] = selKey.split("-");
-        if (day === targetDay) return;
-        const list = copy[day] || [];
-        const idx = list.findIndex((e) => e.id === id);
-        if (idx > -1) {
-          const [moved] = list.splice(idx, 1);
-          copy[targetDay] = [...(copy[targetDay] || []), moved];
-        }
-      });
-      return copy;
+    const copy = JSON.parse(JSON.stringify(events));
+    selectedEvents.forEach((selKey) => {
+      const [day, id] = selKey.split("-");
+      if (day === targetDay) return;
+      const list = copy[day] || [];
+      const idx = list.findIndex((e) => e.id === id);
+      if (idx > -1) {
+        const [moved] = list.splice(idx, 1);
+        copy[targetDay] = [...(copy[targetDay] || []), moved];
+      }
     });
+    if (copy[targetDay]) {
+      copy[targetDay].sort((a, b) => a.time.localeCompare(b.time));
+    }
+    updateAndSyncEvents(copy);
     setSelectedEvents(new Set());
     setBulkMode(false);
   };
 
   const duplicateWeek = () => {
-    setEvents((prev) => {
-      const next = { ...prev };
-      DAYS.forEach((day) => {
-        next[day] = (next[day] || []).map((e) => ({ ...e, id: `evt-${Date.now()}-${Math.random().toString(36).slice(2, 6)}` }));
-      });
-      return next;
+    const nextEvents = { ...events };
+    DAYS.forEach((day) => {
+      nextEvents[day] = (nextEvents[day] || []).map((e) => ({
+        ...e,
+        id: `evt-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      }));
     });
+    updateAndSyncEvents(nextEvents);
   };
 
   // ─── Export ─────────────────────────────────────────────────────
@@ -375,12 +453,21 @@ export default function StudyPlanner() {
                       <div className="flex items-center gap-2 mb-1">
                         <CatIcon size={14} style={{ color: cat.color }} />
                         <span className="text-sm font-semibold text-[var(--color-text-primary)]">{evt.title}</span>
+                        {evt.reminder_enabled !== false && (
+                          <Bell size={12} className="text-[var(--color-primary-light)] animate-pulse" />
+                        )}
                       </div>
                       <p className="text-xs font-mono text-[var(--color-text-muted)]">
                         {evt.time} — {evt.endTime || "—"}
                       </p>
                       {evt.notes && (
                         <p className="text-[10px] text-[var(--color-text-muted)] mt-1 line-clamp-2">{evt.notes}</p>
+                      )}
+                      {evt.reminder_enabled !== false && (
+                        <p className="text-[10px] text-[var(--color-primary-light)] mt-1.5 flex items-center gap-1">
+                          <Bell size={10} />
+                          WhatsApp reminder: {evt.reminder_lead_time_mins === 1440 ? "1 day" : evt.reminder_lead_time_mins >= 60 ? `${evt.reminder_lead_time_mins / 60} hour(s)` : `${evt.reminder_lead_time_mins} mins`} before
+                        </p>
                       )}
                       <span
                         className="inline-block mt-2 text-[9px] font-bold uppercase px-2 py-0.5 rounded-full"
@@ -432,7 +519,10 @@ export default function StudyPlanner() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-bold text-[var(--color-text-primary)]">Study Planner</h1>
+          <h1 className="text-xl font-bold text-[var(--color-text-primary)] flex items-center gap-2">
+            Study Planner
+            {loading && <Loader2 size={14} className="animate-spin text-[var(--color-primary-light)]" />}
+          </h1>
           <p className="text-sm text-[var(--color-text-muted)] mt-1">
             {totalEvents} events · {totalHours.toFixed(1)}h planned this week
           </p>
@@ -656,6 +746,9 @@ export default function StudyPlanner() {
                                 <span className="text-[10px] font-semibold truncate" style={{ color: cat.color }}>
                                   {evt.title}
                                 </span>
+                                {evt.reminder_enabled !== false && (
+                                  <Bell size={9} className="flex-shrink-0 opacity-70" style={{ color: cat.color }} />
+                                )}
                               </div>
                               {!bulkMode && (
                                 <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
@@ -794,6 +887,103 @@ export default function StudyPlanner() {
                 rows={2}
                 className="w-full text-xs py-2.5 px-4 rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-base-950)] text-[var(--color-text-secondary)] outline-none focus:border-[var(--color-primary-light)] resize-none placeholder:text-[var(--color-text-muted)]"
               />
+
+              {/* WhatsApp Reminder Section */}
+              <div className="p-3.5 rounded-xl border border-[var(--color-border-subtle)] bg-[rgba(99,102,241,0.02)] space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Bell size={14} className={formReminderEnabled ? "text-[var(--color-primary-light)] animate-pulse" : "text-[var(--color-text-muted)]"} />
+                    <span className="text-xs font-semibold text-[var(--color-text-primary)]">WhatsApp Reminder</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setFormReminderEnabled(!formReminderEnabled)}
+                    className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                      formReminderEnabled ? "bg-[var(--color-primary)]" : "bg-neutral-800"
+                    }`}
+                  >
+                    <span
+                      className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                        formReminderEnabled ? "translate-x-4" : "translate-x-0"
+                      }`}
+                    />
+                  </button>
+                </div>
+
+                {formReminderEnabled && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="flex flex-col gap-3 pt-1 border-t border-[var(--color-border-subtle)] border-opacity-40"
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-[10px] text-[var(--color-text-secondary)]">Notify me:</span>
+                      <select
+                        value={isCustomLeadTime ? "custom" : formReminderLeadTimeMins}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (val === "custom") {
+                            setIsCustomLeadTime(true);
+                            const currentMins = formReminderLeadTimeMins;
+                            if (currentMins % 1440 === 0) {
+                              setCustomLeadTimeValue(currentMins / 1440);
+                              setCustomLeadTimeUnit("days");
+                            } else if (currentMins % 60 === 0) {
+                              setCustomLeadTimeValue(currentMins / 60);
+                              setCustomLeadTimeUnit("hours");
+                            } else {
+                              setCustomLeadTimeValue(currentMins);
+                              setCustomLeadTimeUnit("minutes");
+                            }
+                          } else {
+                            setIsCustomLeadTime(false);
+                            setFormReminderLeadTimeMins(Number(val));
+                          }
+                        }}
+                        className="text-xs py-1.5 px-3 rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-base-950)] text-[var(--color-text-primary)] outline-none focus:border-[var(--color-primary-light)] transition-colors cursor-pointer"
+                      >
+                        <option value={15}>15 minutes before</option>
+                        <option value={30}>30 minutes before</option>
+                        <option value={60}>1 hour before</option>
+                        <option value={120}>2 hours before</option>
+                        <option value={1440}>1 day before</option>
+                        <option value="custom">Custom...</option>
+                      </select>
+                    </div>
+
+                    {isCustomLeadTime && (
+                      <div className="flex items-center justify-end gap-2 animate-fadeIn">
+                        <input
+                          type="number"
+                          min={1}
+                          step={1}
+                          value={customLeadTimeValue}
+                          onChange={(e) => {
+                            const val = Math.max(1, Number(e.target.value));
+                            setCustomLeadTimeValue(val);
+                            updateCustomMins(val, customLeadTimeUnit);
+                          }}
+                          className="w-16 text-xs py-1 px-2 rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-base-950)] text-[var(--color-text-primary)] outline-none focus:border-[var(--color-primary-light)] text-center"
+                        />
+                        <select
+                          value={customLeadTimeUnit}
+                          onChange={(e) => {
+                            const unit = e.target.value;
+                            setCustomLeadTimeUnit(unit);
+                            updateCustomMins(customLeadTimeValue, unit);
+                          }}
+                          className="text-xs py-1 px-2 rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-base-950)] text-[var(--color-text-primary)] outline-none focus:border-[var(--color-primary-light)] cursor-pointer"
+                        >
+                          <option value="minutes">minutes before</option>
+                          <option value="hours">hours before</option>
+                          <option value="days">days before</option>
+                        </select>
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+              </div>
 
               <div className="flex gap-2 justify-end pt-1">
                  <button onClick={resetForm} className="px-4 py-2 rounded-xl text-xs font-semibold text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-border-subtle)] border border-[var(--color-border-subtle)] transition-all cursor-pointer">

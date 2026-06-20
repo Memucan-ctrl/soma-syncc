@@ -6,7 +6,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Sparkles, Loader2, Calendar, Check, AlertCircle, RefreshCw } from "lucide-react";
-import { fetchWeeklySummary, fetchAiStudyPlan } from "../services/api";
+import { fetchWeeklySummary, fetchAiStudyPlan, saveTimetableEvents } from "../services/api";
 import MarkdownRenderer from "./MarkdownRenderer";
 
 const SUMMARY_CACHE_KEY = "somasync_weekly_summary_cache";
@@ -156,6 +156,11 @@ export default function WeeklyIntelligenceCard({ courses, events, onOpenTab }) {
       const res = await fetchAiStudyPlan(cleanCourses, cleanEvents);
       if (res && res.events) {
         localStorage.setItem("somasync_study_planner", JSON.stringify(res.events));
+        try {
+          await saveTimetableEvents(res.events);
+        } catch (syncErr) {
+          console.warn("[WeeklyIntelligence] Failed to sync generated plan to backend:", syncErr);
+        }
         setGenSuccess(true);
         setTimeout(() => {
           if (onOpenTab) onOpenTab("timetable");

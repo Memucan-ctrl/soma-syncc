@@ -142,15 +142,7 @@ export default function Sidebar({ activeTab, onTabChange, profile, onLogout, col
                 exit={{ opacity: 0, width: 0 }}
                 className="whitespace-nowrap overflow-hidden flex items-center gap-2"
               >
-                Staff Portal
-                {isAdmin && (
-                  <span
-                    className="text-[8px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wider"
-                    style={{ background: "rgba(251,191,36,0.1)", color: "var(--color-accent-amber)", border: "1px solid rgba(251,191,36,0.2)" }}
-                  >
-                    Staff
-                  </span>
-                )}
+                Admin Panel
               </motion.span>
             )}
           </AnimatePresence>

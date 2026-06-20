@@ -11,7 +11,65 @@ import google.generativeai as genai
 from app.services.whatsapp_service import send_whatsapp_via_twilio
 from app.routers.study_intelligence import CourseInfo, DeadlineEvent
 
+from fastapi import Header
+from app.routers.moodle import extract_token, get_userid
+import json
+
 router = APIRouter(prefix="/api/notifications", tags=["Notifications"])
+
+STORAGE_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "storage")
+
+class NotificationSettings(BaseModel):
+    phone_number: str = ""
+    weekly_summary_enabled: bool = False
+    urgent_deadline_enabled: bool = False
+    study_alerts_enabled: bool = True  # New toggle for study planner event reminders
+
+@router.get("/settings", response_model=NotificationSettings)
+async def get_notification_settings(authorization: str = Header(...)):
+    """
+    Get the persisted notification settings for the authenticated Moodle user.
+    """
+    try:
+        token = extract_token(authorization)
+        userid = await get_userid(token)
+    except Exception as e:
+        raise HTTPException(status_code=401, detail=f"Authentication failed: {str(e)}")
+        
+    file_path = os.path.join(STORAGE_DIR, f"settings_{userid}.json")
+    if os.path.exists(file_path):
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            # Default missing fields if any
+            if "study_alerts_enabled" not in data:
+                data["study_alerts_enabled"] = True
+            return NotificationSettings(**data)
+        except Exception as e:
+            print(f"[!] Error reading settings_{userid}.json: {e}")
+            
+    # Default settings
+    return NotificationSettings()
+
+@router.post("/settings")
+async def save_notification_settings(payload: NotificationSettings, authorization: str = Header(...)):
+    """
+    Save notification settings for the authenticated Moodle user.
+    """
+    try:
+        token = extract_token(authorization)
+        userid = await get_userid(token)
+    except Exception as e:
+        raise HTTPException(status_code=401, detail=f"Authentication failed: {str(e)}")
+        
+    os.makedirs(STORAGE_DIR, exist_ok=True)
+    file_path = os.path.join(STORAGE_DIR, f"settings_{userid}.json")
+    try:
+        with open(file_path, "w", encoding="utf-8") as f:
+            json.dump(payload.dict(), f, indent=2, ensure_ascii=False)
+        return {"status": "success", "message": "Notification preferences saved successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to save settings: {str(e)}")
 
 class TestWhatsappRequest(BaseModel):
     phone_number: str

@@ -16,6 +16,10 @@ MOODLE_BASE = "https://elearning.zetech.ac.ke/webservice/rest/server.php"
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
 
+# In-memory cache for user IDs
+_token_userid_cache = {}
+
+
 def _extract_token(authorization: str) -> str:
     """Extract token from 'Bearer <token>' header."""
     if not authorization:
@@ -24,6 +28,11 @@ def _extract_token(authorization: str) -> str:
     if len(parts) != 2 or parts[0].lower() != "bearer":
         raise HTTPException(status_code=401, detail="Invalid Authorization format. Use: Bearer <token>")
     return parts[1]
+
+
+def extract_token(authorization: str) -> str:
+    """Public helper to extract token."""
+    return _extract_token(authorization)
 
 
 async def _moodle_call(token: str, wsfunction: str, params: dict | None = None) -> dict | list:
@@ -55,9 +64,19 @@ async def _moodle_call(token: str, wsfunction: str, params: dict | None = None) 
 
 
 async def _get_userid(token: str) -> int:
-    """Get the user ID from the token via site info."""
+    """Get the user ID from the token via site info, cached."""
+    if token in _token_userid_cache:
+        return _token_userid_cache[token]
     data = await _moodle_call(token, "core_webservice_get_site_info")
-    return data.get("userid")
+    userid = data.get("userid")
+    if userid:
+        _token_userid_cache[token] = userid
+    return userid
+
+
+async def get_userid(token: str) -> int:
+    """Public helper to get user ID, cached."""
+    return await _get_userid(token)
 
 
 # ─── Routes ───────────────────────────────────────────────────────────────────

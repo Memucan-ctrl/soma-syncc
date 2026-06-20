@@ -9,11 +9,22 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.routers import auth, moodle, ai, ocr, admin, study_intelligence, notifications
 
 
+import asyncio
+from app.services.reminder_worker import start_reminder_worker
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     print("[*] SomaSync backend starting up...")
+    # Start background reminder daemon
+    worker_task = asyncio.create_task(start_reminder_worker())
     yield
     print("[*] SomaSync backend shutting down...")
+    worker_task.cancel()
+    try:
+        await worker_task
+    except asyncio.CancelledError:
+        print("[*] Reminder worker task cancelled successfully.")
 
 
 class StripPrefixMiddleware:

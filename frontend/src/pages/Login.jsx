@@ -37,7 +37,7 @@ export default function Login({ onLoginSuccess }) {
             firstname: "Staff",
             lastname: "Administrator",
             fullname: "Staff Administrator",
-            sitename: "SomaSync Staff Portal",
+            sitename: "SomaSync Admin Panel",
             siteurl: "",
             userpictureurl: "",
           }

@@ -78,7 +78,7 @@ function AdminPasswordGate() {
           <Shield size={20} />
         </div>
         <div>
-          <h2 className="text-base font-bold text-[var(--color-text-primary)]">Staff Portal Access</h2>
+          <h2 className="text-base font-bold text-[var(--color-text-primary)]">Admin Panel Access</h2>
           <p className="text-xs text-[var(--color-text-muted)] mt-1.5 leading-relaxed">
             Please enter the administrator password to unlock the admin panel.
           </p>
@@ -169,7 +169,6 @@ function AuthenticatedApp({ onLogout }) {
     return "home";
   });
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [pendingAiAction, setPendingAiAction] = useState(null);
   const isMobile = useIsMobile();
 
   const [settings, setSettings] = useState(() => {
@@ -264,11 +263,6 @@ function AuthenticatedApp({ onLogout }) {
     return <MaintenancePage onLogout={onLogout} />;
   }
 
-  const handleSendToAi = (query, text, filename) => {
-    setPendingAiAction({ query, text, filename });
-    setActiveTab("ai");
-  };
-
   const pages = {
     home: (
       <Home
@@ -277,15 +271,12 @@ function AuthenticatedApp({ onLogout }) {
         events={events}
         loading={loading}
         onOpenAi={() => setActiveTab("ai")}
-        onSendToAi={handleSendToAi}
         onOpenTab={setActiveTab}
       />
     ),
     ai: (
       <ChatWorkspace
         isPage={true}
-        pendingAiAction={pendingAiAction}
-        clearPendingAiAction={() => setPendingAiAction(null)}
       />
     ),
     moodle: <AssetManager />,
