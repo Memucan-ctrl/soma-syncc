@@ -1,6 +1,15 @@
-# SomaSync
+# SomaSync 🎓⚡
 
-> Elite Edutech Platform — Gamified Technical Workflows, Moodle Sync, AI-Powered Study Management
+> Gamified developer dashboard for students — syncs Moodle assignments and deadlines, maps them to your GitHub commits as progress streaks, and answers study questions with an AI assistant trained on your actual syllabus.
+
+🏆 **1st Place — GitSync Hackathon 2026 (Zetech University)** · Incubated at the **iZET Innovation, Entrepreneurship & Technology Hub**
+🌐 **Live:** [somasync.tech](https://somasync.tech)
+
+## What it does
+- **Moodle sync** — pulls live assignments, deadlines and course data from the Moodle REST API
+- **Gamified streaks** — maps coursework deadlines to your GitHub commit activity so progress is visible
+- **AI study assistant** — RAG over real course materials: syllabus OCR via Azure Document Intelligence, embeddings in Supabase pgvector, answers via Gemini 2.5 Flash
+- **Production deployment** — Dockerized FastAPI backend on Azure, Vercel frontend
 
 ## Architecture
 
@@ -42,11 +51,15 @@ npm run dev
 ```
 
 ## Tech Stack
-- **Backend**: FastAPI, httpx, Pydantic v2, Supabase
+- **Backend**: FastAPI (async), httpx, Pydantic v2, Docker
 - **Frontend**: React, Vite, Tailwind CSS v4, Framer Motion, Lucide Icons
-- **AI**: Gemini 2.5 Flash, Azure Document Intelligence
+- **AI**: Gemini 2.5 Flash (RAG), Azure Document Intelligence (syllabus OCR)
 - **Database**: Supabase (PostgreSQL + pgvector)
-- **LMS**: Zetech Moodle REST API
+- **LMS**: Moodle REST API
+- **Infra**: Azure (backend), Vercel (frontend)
+
+## Team
+Built with Grace Kamure and Samuel Kangethe at the GitSync Hackathon, Zetech University.
 
 ## License
 MIT
