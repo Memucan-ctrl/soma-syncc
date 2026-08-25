@@ -1,15 +1,15 @@
 # SomaSync 🎓⚡
 
-> Gamified developer dashboard for students — syncs Moodle assignments and deadlines, maps them to your GitHub commits as progress streaks, and answers study questions with an AI assistant trained on your actual syllabus.
+> Gamified developer dashboard for students. Syncs Moodle assignments and deadlines, maps them to your GitHub commits as progress streaks and answers study questions with an AI assistant trained on your actual syllabus.
 
-🏆 **1st Place — GitSync Hackathon 2026 (Zetech University)** · Incubated at the **iZET Innovation, Entrepreneurship & Technology Hub**
+🏆 **Winner, GitSync Hackathon 2026 (Zetech University)** · incubated at the **iZET Innovation, Entrepreneurship & Technology Hub**
 🌐 **Live:** [somasync.tech](https://somasync.tech)
 
 ## What it does
-- **Moodle sync** — pulls live assignments, deadlines and course data from the Moodle REST API
-- **Gamified streaks** — maps coursework deadlines to your GitHub commit activity so progress is visible
-- **AI study assistant** — RAG over real course materials: syllabus OCR via Azure Document Intelligence, embeddings in Supabase pgvector, answers via Gemini 2.5 Flash
-- **Production deployment** — Dockerized FastAPI backend on Azure, Vercel frontend
+- **Moodle sync:** pulls live assignments, deadlines and course data from the Moodle REST API
+- **Gamified streaks:** maps coursework deadlines to your GitHub commit activity so progress stays visible
+- **AI study assistant:** RAG over real course materials. Syllabus OCR via Azure Document Intelligence, embeddings in Supabase pgvector, answers via Gemini 2.5 Flash
+- **Production deployment:** Dockerized FastAPI backend on Azure, Vercel frontend
 
 ## Architecture
 
